@@ -19,7 +19,7 @@ enum Type {
             ?? Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: nil)
             ?? []
         guard !urls.isEmpty else {
-            NSLog("Sono: bundled fonts missing — falling back to the system face")
+            NSLog("Sono: bundled fonts missing, falling back to the system face")
             return
         }
         for url in urls {

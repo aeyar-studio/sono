@@ -132,7 +132,7 @@ final class Dictation {
             return
         }
         guard Licensing.shared.state.isUnlocked else {
-            flash("Trial ended — see Sono")
+            flash("Trial ended")
             return
         }
         do {

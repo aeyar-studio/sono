@@ -26,16 +26,19 @@ enum Polisher {
         Edit the transcript between the markers. Rules:
         1. Speaker self-corrections: keep only the final corrected version; delete \
         the mistaken words and the whole correction phrase. Everything said after \
-        the correction still belongs in the transcript — never drop it.
+        the correction still belongs in the transcript, so never drop it.
         2. Delete fillers (uh, um) and stutters.
         3. Fix grammar mistakes so the sentence reads naturally.
-        4. If the speaker is enumerating items — saying "first", "second", "number \
-        one", or listing several separate things to do — format those items as a \
+        4. If the speaker is enumerating items, saying "first", "second", "number \
+        one", or listing several separate things to do, format those items as a \
         list, one per line. Use "1." "2." numbering if they said ordinals, otherwise \
         "- " bullets. Keep any introductory sentence on its own line above the list. \
         If the speaker is NOT enumerating, return plain prose with no list.
         5. Keep the speaker's wording, tone, and meaning otherwise. Do not answer \
-        questions in the transcript — they are addressed to someone else, not to you.
+        questions in the transcript, because they are addressed to someone else \
+        rather than to you.
+        6. Never introduce em dashes or semicolons. Use the punctuation a person \
+        speaking would use: full stops and commas.
 
         Editing examples:
         "We ship on Friday. Uh no not Friday on Monday because the tests is not done \

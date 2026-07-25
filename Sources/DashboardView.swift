@@ -479,11 +479,11 @@ private struct PolishRow: View {
 
     private var subtitle: String {
         guard Polisher.isAvailable else {
-            return "Unavailable — turn on Apple Intelligence in System Settings"
+            return "Unavailable. Turn on Apple Intelligence in System Settings"
         }
         return enabled
             ? "Fixes self-corrections and grammar · adds about a second"
-            : "Off — raw transcription, fastest output"
+            : "Off. Raw transcription, fastest output"
     }
 
     var body: some View {
@@ -522,7 +522,7 @@ private struct EmptyState: View {
                 Text("No dictations yet")
                     .font(Type.font(15, .semibold))
                     .foregroundStyle(Palette.ink)
-                Text("Click into any text field, then tap ⌥ to start and stop — or hold ⌥ and speak. Your metrics will appear here.")
+                Text("Click into any text field, then tap ⌥ to start and stop, or hold ⌥ and speak. Your metrics will appear here.")
                     .font(Type.font(12))
                     .foregroundStyle(Palette.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -565,7 +565,7 @@ private struct SettingsPage: View {
                         AppearancePicker(selection: $appearanceRaw)
                     }
                     SettingsSection("Accent",
-                                    note: "Applies everywhere — dashboard, the floating island, the logo and the Dock icon.") {
+                                    note: "Applies everywhere: dashboard, the floating island, the logo and the Dock icon.") {
                         ThemePicker()
                     }
                     SettingsSection("Transcription",
@@ -585,7 +585,7 @@ private struct SettingsPage: View {
                     SettingsSection("Shortcut", note: nil) {
                         InfoRow(icon: "keyboard",
                                 title: "Tap ⌥ to start and stop",
-                                detail: "Hold ⌥ instead for push-to-talk — recording ends when you let go. F9 also works if your F-keys are set to standard function keys.")
+                                detail: "Hold ⌥ instead for push-to-talk, so recording ends when you let go. F9 also works if your F-keys are set to standard function keys.")
                     }
                     SettingsSection("Engine", note: nil) {
                         InfoRow(icon: "cpu",
@@ -596,7 +596,7 @@ private struct SettingsPage: View {
                         LicenceRow()
                     }
                     SettingsSection("Uninstall",
-                                    note: "Dragging Sono to the Trash removes only the app — the model and your history would stay on disk.") {
+                                    note: "Dragging Sono to the Trash removes only the app. The model and your history would stay on disk.") {
                         RemoveDataRow()
                     }
                 }
@@ -900,7 +900,7 @@ private struct RemoveDataRow: View {
             }
         } message: {
             Text("""
-                 This deletes the speech model (\(inventory?.readableModel ?? "—")), \
+                 This deletes the speech model (\(inventory?.readableModel ?? "unknown")), \
                  your dictation history and all preferences, then quits Sono. \
                  Afterwards, drag Sono to the Trash to finish uninstalling.
 
@@ -1056,7 +1056,7 @@ private struct LicenceRow: View {
 
     private var subtitle: String {
         switch licensing.state {
-        case .licensed: "Thank you — this Mac is activated"
+        case .licensed: "Thank you. This Mac is activated"
         case .trialEnded: "Enter your key to keep dictating"
         case .trial:
             "\(licensing.wordsRemaining) of \(Licensing.trialWordLimit) words left · one-time $39"
@@ -1108,7 +1108,7 @@ private struct SidebarFooter: View {
                     .font(Type.font(14, .semibold))
                     .foregroundStyle(Palette.ink)
             }
-            Text("Yours for good — no subscription, no expiry.")
+            Text("Yours for good. No subscription, no expiry.")
                 .font(Type.caption)
                 .foregroundStyle(Palette.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
