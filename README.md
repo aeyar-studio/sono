@@ -7,6 +7,8 @@ the device.
 Free, MIT licensed, and there is nothing to buy: no account, no licence key, no
 trial.
 
+**[Download for macOS](https://heysono.app)** — signed and notarised, macOS 26+.
+
 <img src="Assets/icon_1024.png" width="120" alt="Sono icon">
 
 ## How it works
@@ -15,6 +17,7 @@ trial.
 mic → AVAudioEngine (16 kHz mono)
     → Parakeet TDT 0.6B v3 int8, via sherpa-onnx / ONNX Runtime
     → Apple Intelligence (Foundation Models): self-corrections, grammar, lists
+      — optional, and off by default: the first run should be as fast as the Mac allows
     → regex sweep for fillers the model missed
     → clipboard + synthetic ⌘V into the focused field
     → appended to history.jsonl
