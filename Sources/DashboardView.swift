@@ -249,7 +249,11 @@ private struct OverviewPage: View {
             }
             .padding(.horizontal, 26)
             .padding(.vertical, 22)
-            .frame(maxWidth: 1000, alignment: .leading)
+            .frame(maxWidth: 1160, alignment: .leading)
+            // Full-width scroll area keeps the scrollbar at the window edge; the
+            // block inside is centred, so a wide window doesn't strand the
+            // content against the sidebar.
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(Palette.canvas)
     }
@@ -613,7 +617,8 @@ private struct SettingsPage: View {
             }
             .padding(.horizontal, 26)
             .padding(.vertical, 22)
-            .frame(maxWidth: 760, alignment: .leading)
+            .frame(maxWidth: 880, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(Palette.canvas)
     }

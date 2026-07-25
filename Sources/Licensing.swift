@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import IOKit
 
 /// Trial and licence state.
 ///
@@ -40,7 +41,14 @@ final class Licensing: ObservableObject {
         static let words = "trialWords"
         static let license = "licenseKey"
         static let instance = "activationInstance"
+        /// Hardware ID the stored activation belongs to.
+        static let device = "activationDevice"
+        static let validated = "lastValidated"
     }
+
+    /// How long between server checks. A revoked or refunded key stops working
+    /// within a week, without pestering the server on every launch.
+    private static let revalidateAfter: TimeInterval = 7 * 24 * 60 * 60
 
     private init() {
         if Keychain.get(Key.license) != nil {
@@ -90,25 +98,43 @@ final class Licensing: ObservableObject {
             }
             Keychain.set(key, for: Key.license)
             Keychain.set(instance, for: Key.instance)
+            Keychain.set(Self.hardwareID, for: Key.device)
+            Keychain.set(String(Date().timeIntervalSince1970), for: Key.validated)
             state = .licensed
         } catch {
             lastError = "Couldn't reach the licence server. Check your connection."
         }
     }
 
-    /// Called at launch. Only revokes when the server explicitly says the key is
-    /// invalid — a network failure must never lock someone out of their own app.
+    /// Called at launch. Checks with the server at most weekly, and only revokes
+    /// when it explicitly says the key is invalid — a network failure must never
+    /// lock someone out of their own app.
     func validateIfNeeded() async {
         guard let key = Keychain.get(Key.license) else { return }
+
+        // The machine changed under a restored backup or a cloned disk: the stored
+        // activation belongs to different hardware, so activate this Mac properly
+        // rather than silently riding the old instance.
+        if let boundTo = Keychain.get(Key.device), boundTo != Self.hardwareID {
+            clearLocalLicense()
+            await activate(key: key)
+            return
+        }
+
+        let last = Double(Keychain.get(Key.validated) ?? "") ?? 0
+        guard Date().timeIntervalSince1970 - last > Self.revalidateAfter else { return }
+
         do {
             let json = try await post("/licenses/validate", body: ["license_key": key])
             if let valid = json["valid"] as? Bool, valid == false {
                 clearLocalLicense()
                 state = Self.stateForWords(wordsUsed)
                 lastError = "This licence is no longer valid."
+            } else {
+                Keychain.set(String(Date().timeIntervalSince1970), for: Key.validated)
             }
         } catch {
-            // Offline, or their API is down: keep working.
+            // Offline, or their API is down: keep working, try again next launch.
         }
     }
 
@@ -128,12 +154,30 @@ final class Licensing: ObservableObject {
     private func clearLocalLicense() {
         Keychain.delete(Key.license)
         Keychain.delete(Key.instance)
+        Keychain.delete(Key.device)
+        Keychain.delete(Key.validated)
     }
 
     // MARK: - Plumbing
 
+    /// Stable per-Mac identifier from the IOKit registry. Used so an activation
+    /// is bound to hardware rather than to a name — two Macs both called
+    /// "MacBook Air" were previously indistinguishable to the licence server, and
+    /// reinstalling could silently burn a second activation slot.
+    private static var hardwareID: String {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
+        guard service != 0 else { return "unknown" }
+        defer { IOObjectRelease(service) }
+        guard let property = IORegistryEntryCreateCFProperty(service, "IOPlatformUUID" as CFString,
+                                                            kCFAllocatorDefault, 0),
+              let uuid = property.takeRetainedValue() as? String else { return "unknown" }
+        return uuid
+    }
+
+    /// Human-readable in Dodo's dashboard, unique per machine.
     private static var deviceName: String {
-        Host.current().localizedName ?? "Mac"
+        let name = Host.current().localizedName ?? "Mac"
+        return "\(name) · \(hardwareID.prefix(8))"
     }
 
     private func post(_ path: String, body: [String: String]) async throws -> [String: Any] {

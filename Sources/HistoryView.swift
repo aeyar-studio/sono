@@ -55,7 +55,8 @@ struct HistoryList: View {
                 }
                 .padding(.horizontal, 26)
                 .padding(.vertical, 22)
-                .frame(maxWidth: 940, alignment: .leading)
+                .frame(maxWidth: 1040, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .background(Palette.canvas)
