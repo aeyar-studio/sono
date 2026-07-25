@@ -19,6 +19,10 @@ final class Licensing: ObservableObject {
     /// hour of real dictation, enough to form a habit.
     static let trialWordLimit = 2_000
 
+    /// Where "Buy" sends people. Swap for the Dodo Payments checkout link once
+    /// the product is live; the site can redirect in the meantime.
+    static let buyURL = "https://heysono.app/buy"
+
     enum State: Equatable {
         case trial(wordsUsed: Int)
         case licensed

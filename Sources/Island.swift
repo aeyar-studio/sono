@@ -199,15 +199,18 @@ private struct IslandView: View {
 }
 
 /// The brand mark: five chunky bars, symmetric, outer pair collapsing to dots.
-/// Colour is FIXED and does not follow the accent theme — black on the cream
-/// icon and sidebar, cream on the dark island (black would be invisible there).
+/// Colour is FIXED and does not follow the accent theme: black on light surfaces,
+/// cream on dark ones. `onDark` forces cream for the island, which stays dark
+/// regardless of the app's appearance setting.
 /// That constancy is the point: the UI can be re-themed, the identity cannot.
 struct LogoMark: View {
     var height: CGFloat
     /// Set on dark surfaces (the island).
     var onDark = false
 
-    private static let black = Color(hex: 0x1C1917)
+    /// Black on light surfaces, cream on dark — resolved per appearance, so the
+    /// sidebar mark doesn't disappear in dark mode.
+    private static let adaptive = Color(light: 0x1C1917, dark: 0xFAF9F7)
     private static let cream = Color(hex: 0xFAF9F7)
     private static let bars: [CGFloat] = [0.28, 0.58, 1.0, 0.58, 0.28]
 
@@ -218,7 +221,7 @@ struct LogoMark: View {
         HStack(spacing: max(2, (height * 0.145).rounded())) {
             ForEach(Self.bars.indices, id: \.self) { i in
                 Capsule()
-                    .fill(onDark ? Self.cream : Self.black)
+                    .fill(onDark ? Self.cream : Self.adaptive)
                     .frame(width: barWidth,
                            height: max(barWidth, (height * Self.bars[i]).rounded()))
             }

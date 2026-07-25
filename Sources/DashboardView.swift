@@ -1019,7 +1019,7 @@ private struct LicenceRow: View {
                         SmallButton(title: licensing.isWorking ? "Checking…" : "Activate", filled: true) {
                             Task { await licensing.activate(key: key) }
                         }
-                        Link(destination: URL(string: "https://sono.app/buy")!) {
+                        Link(destination: URL(string: Licensing.buyURL)!) {
                             Text("Buy · $39")
                                 .font(Type.font(11, .medium))
                                 .foregroundStyle(theme.accent)
