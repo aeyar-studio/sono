@@ -170,7 +170,7 @@ final class Dictation {
                 History.shared.add(text: text,
                                    duration: Double(samples.count) / Recorder.sampleRate,
                                    pasted: pasted)
-                Licensing.shared.recordDictation(words: Metrics.wordCount(text))
+                Licensing.shared.recordDictation()
                 flash(pasted ? "Pasted" : "Copied to clipboard")
             } catch {
                 flash("No speech")

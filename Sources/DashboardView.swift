@@ -1039,7 +1039,7 @@ private struct LicenceRow: View {
     }
 
     private var progress: Double {
-        Double(licensing.wordsUsed) / Double(Licensing.trialWordLimit)
+        Double(licensing.used) / Double(Licensing.trialLimit)
     }
 
     private var icon: String {
@@ -1063,7 +1063,7 @@ private struct LicenceRow: View {
         case .licensed: "Thank you. This Mac is activated"
         case .trialEnded: "Enter your key to keep dictating"
         case .trial:
-            "\(licensing.wordsRemaining) of \(Licensing.trialWordLimit) words left · one-time $39"
+            "\(licensing.remaining) of \(Licensing.trialLimit) free dictations left, then $39 once"
         }
     }
 }
@@ -1132,7 +1132,7 @@ private struct SidebarFooter: View {
                 }
             }
             .frame(height: 4)
-            Text("\(Metrics.count(licensing.wordsRemaining)) words left")
+            Text("\(licensing.remaining) of \(Licensing.trialLimit) dictations left")
                 .font(Type.caption)
                 .foregroundStyle(Palette.inkSecondary)
         }
@@ -1151,7 +1151,7 @@ private struct SidebarFooter: View {
     }
 
     private var progress: Double {
-        min(1, Double(licensing.wordsUsed) / Double(Licensing.trialWordLimit))
+        min(1, Double(licensing.used) / Double(Licensing.trialLimit))
     }
 }
 
