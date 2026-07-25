@@ -1,0 +1,58 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Sono 1.0</title>
+<!--
+  Shown inside Sparkle's update dialog, which is a narrow, offline WebView.
+  Everything is inline and the font stack is the system one: no network, no
+  webfonts, no external stylesheet. Keep it that way or the panel renders blank.
+-->
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 13px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    margin: 0; padding: 14px 16px 18px;
+    color: #1d1d1f; background: transparent;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: #6e6e73; margin: 0 0 14px; font-size: 12px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #6e6e73; margin: 16px 0 6px; font-weight: 600;
+  }
+  ul { margin: 0; padding-left: 17px; }
+  li { margin: 0 0 5px; }
+  b { font-weight: 600; }
+  .note {
+    margin: 16px 0 0; padding: 9px 11px; border-radius: 7px;
+    background: rgba(0,0,0,0.045); color: #424245; font-size: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #f5f5f7; }
+    .sub, h2 { color: #98989d; }
+    .note { background: rgba(255,255,255,0.07); color: #c7c7cc; }
+  }
+</style>
+
+<h1>Sono 1.0</h1>
+<p class="sub">The first release. Dictation that runs on your Mac.</p>
+
+<h2>What it does</h2>
+<ul>
+  <li><b>Hold Option</b> and speak, and it stops the moment you let go. Or <b>tap Option</b> to start, tap again to stop. Either way the text lands in whatever app you were already typing in.</li>
+  <li>Transcription runs <b>entirely on your Mac</b> using NVIDIA's Parakeet model. No audio leaves the machine, and it works with the Wi-Fi off.</li>
+  <li>Optional <b>Apple Intelligence</b> cleanup removes fillers, follows your self-corrections, and turns spoken lists into real ones. It ships <b>switched off</b>, so your first dictation is as fast as the machine can go. Turn it on in Settings.</li>
+  <li>A dashboard showing what you dictated, how long it took, and which apps you use it in.</li>
+</ul>
+
+<h2>Worth knowing</h2>
+<ul>
+  <li>Sono asks for <b>Microphone</b> and <b>Accessibility</b> at first launch. Accessibility is what lets it paste into other apps; without it, text goes to your clipboard instead.</li>
+  <li>Your clipboard is put back the way it was after each paste, images and formatting included.</li>
+  <li>Silence is trimmed before transcription, so pauses at either end cost you nothing.</li>
+  <li>Sono is <b>free</b>. No account, no licence, no expiry.</li>
+</ul>
+
+<p class="note">
+  Requires macOS 26 or later. Apple Intelligence cleanup needs a Mac that supports it and works
+  best on shorter dictations; Sono falls back to the raw transcript when it cannot run.
+</p>
