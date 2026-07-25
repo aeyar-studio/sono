@@ -41,8 +41,7 @@ final class Licensing: ObservableObject {
     @Published var isWorking = false
 
     private enum Key {
-        /// Historic name kept so existing installs do not get a fresh trial.
-        static let used = "trialWords"
+        static let used = "trialDictations"
         static let license = "licenseKey"
         static let instance = "activationInstance"
         /// Hardware ID the stored activation belongs to.
