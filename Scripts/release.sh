@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# Builds, signs, notarizes and packages Sono for distribution outside the App
+# Store. One command: Scripts/release.sh
+#
+# Prerequisites (one-time):
+#   1. A "Developer ID Application" certificate in your login keychain.
+#      Xcode → Settings → Accounts → your Apple ID → Manage Certificates →
+#      + → Developer ID Application
+#   2. Notary credentials stored in the keychain under the profile "sono-notary":
+#      xcrun notarytool store-credentials sono-notary \
+#        --apple-id "you@example.com" --team-id "TEAMID" \
+#        --password "app-specific-password"      # appleid.apple.com → App-Specific Passwords
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+APP_NAME="Sono"
+NOTARY_PROFILE="${NOTARY_PROFILE:-sono-notary}"
+BUILD_DIR="$ROOT/build/release"
+DIST_DIR="$ROOT/dist"
+
+step() { printf "\n\033[1m▸ %s\033[0m\n" "$1"; }
+fail() { printf "\n\033[31m✗ %s\033[0m\n" "$1" >&2; exit 1; }
+
+# ─────────────────────────────────────────────────── preflight
+step "Preflight"
+
+IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null \
+  | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)"/\1/' || true)"
+[ -n "$IDENTITY" ] || fail "No 'Developer ID Application' certificate found.
+  Xcode → Settings → Accounts → Manage Certificates → + → Developer ID Application
+  (Apple Development certificates cannot be notarized.)"
+echo "  signing identity: $IDENTITY"
+
+TEAM_ID="$(echo "$IDENTITY" | sed -n 's/.*(\([A-Z0-9]*\))$/\1/p' || true)"
+echo "  team: $TEAM_ID"
+
+xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1 \
+  || fail "No notary credentials stored for profile '$NOTARY_PROFILE'. Run:
+  xcrun notarytool store-credentials $NOTARY_PROFILE \\
+    --apple-id \"you@example.com\" --team-id \"$TEAM_ID\" --password \"app-specific-password\""
+echo "  notary profile: $NOTARY_PROFILE"
+
+[ -f "$ROOT/Vendor/sherpa/lib/libsherpa-onnx-c-api.dylib" ] \
+  || fail "Vendored libraries missing. Run Scripts/fetch-sherpa.sh"
+
+VERSION="$(grep -E "^\s+MARKETING_VERSION:" project.yml | sed 's/.*: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/' || true)"
+[ -n "$VERSION" ] || fail "Could not read MARKETING_VERSION from project.yml"
+echo "  version: $VERSION"
+
+# ─────────────────────────────────────────────────── build
+step "Building Release"
+xcodegen generate >/dev/null
+rm -rf "$BUILD_DIR" && mkdir -p "$BUILD_DIR"
+xcodebuild -project Sono.xcodeproj -scheme "$APP_NAME" -configuration Release \
+  CONFIGURATION_BUILD_DIR="$BUILD_DIR" \
+  CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+  build > "$BUILD_DIR/build.log" 2>&1 \
+  || { tail -30 "$BUILD_DIR/build.log"; fail "Build failed — see $BUILD_DIR/build.log"; }
+
+APP="$BUILD_DIR/$APP_NAME.app"
+[ -d "$APP" ] || fail "Built app not found at $APP"
+echo "  built: $APP"
+
+# ─────────────────────────────────────────────────── sign
+# Nested code must be signed BEFORE the bundle that contains it, innermost first,
+# or the outer signature seals an unsigned binary and notarization rejects it.
+step "Signing (inside out)"
+while IFS= read -r dylib; do
+  codesign --force --timestamp --options runtime --sign "$IDENTITY" "$dylib"
+  echo "  signed: $(basename "$dylib")"
+done < <(find "$APP/Contents/Frameworks" -name "*.dylib" -type f 2>/dev/null)
+
+codesign --force --timestamp --options runtime \
+  --entitlements "$ROOT/Sono.entitlements" \
+  --sign "$IDENTITY" "$APP"
+echo "  signed: $APP_NAME.app"
+
+step "Verifying signature"
+codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | sed 's/^/  /'
+
+# ─────────────────────────────────────────────────── package
+step "Packaging DMG"
+mkdir -p "$DIST_DIR"
+DMG="$DIST_DIR/$APP_NAME-$VERSION.dmg"
+STAGING="$(mktemp -d)"
+cp -R "$APP" "$STAGING/"
+ln -s /Applications "$STAGING/Applications"     # the drag-to-install gesture
+rm -f "$DMG"
+hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" -ov -format UDZO \
+  -quiet "$DMG"
+rm -rf "$STAGING"
+codesign --force --timestamp --sign "$IDENTITY" "$DMG"
+echo "  $DMG ($(du -h "$DMG" | cut -f1))"
+
+# ─────────────────────────────────────────────────── notarize
+step "Notarizing (Apple usually answers in 1–5 minutes)"
+xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait \
+  | tee "$DIST_DIR/notary.log" | sed 's/^/  /'
+grep -q "status: Accepted" "$DIST_DIR/notary.log" || {
+  ID="$(grep -m1 "id:" "$DIST_DIR/notary.log" | awk '{print $2}')"
+  echo "  Fetching the rejection reason…"
+  xcrun notarytool log "$ID" --keychain-profile "$NOTARY_PROFILE" | sed 's/^/  /'
+  fail "Notarization rejected — see the log above"
+}
+
+step "Stapling"
+xcrun stapler staple "$DMG"
+xcrun stapler validate "$DMG" | sed 's/^/  /'
+
+# ─────────────────────────────────────────────────── verify like a user would
+step "Gatekeeper assessment (what a customer's Mac will decide)"
+spctl --assess --type open --context context:primary-signature -vv "$DMG" 2>&1 | sed 's/^/  /'
+
+step "Done"
+SHA="$(shasum -a 256 "$DMG" | awk '{print $1}')"
+SIZE="$(stat -f%z "$DMG")"
+cat <<SUMMARY
+
+  file    $DMG
+  size    $SIZE bytes
+  sha256  $SHA
+
+  Sparkle appcast item (once Sparkle is wired up):
+    <item>
+      <title>$VERSION</title>
+      <enclosure url="https://heysono.app/releases/$APP_NAME-$VERSION.dmg"
+                 sputils:version="$VERSION" length="$SIZE"
+                 type="application/octet-stream" />
+    </item>
+SUMMARY
