@@ -17,11 +17,22 @@ struct Metrics {
     let averageLength: TimeInterval // seconds per dictation
     let pasteRate: Double           // 0…1, share that reached the target field
     let daily: [Day]                // oldest → newest, zero-filled
+    let apps: [App]                 // busiest first
 
     struct Day: Identifiable {
         let date: Date
         let words: Int
         var id: Date { date }
+    }
+
+    /// Where dictation actually lands. Keyed on the bundle id rather than the
+    /// display name, so an app that renames itself does not split into two rows.
+    struct App: Identifiable {
+        let name: String
+        let bundleID: String
+        let characters: Int
+        let dictations: Int
+        var id: String { bundleID }
     }
 
     static func wordCount(_ text: String) -> Int {
@@ -52,6 +63,21 @@ struct Metrics {
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
             return Day(date: date, words: buckets[date] ?? 0)
         }
+
+        // Entries from before the app was recorded are left out rather than
+        // lumped into an "Unknown" row, which would tower over the real ones on
+        // any history that predates this and tell the user nothing.
+        var byApp: [String: (name: String, characters: Int, count: Int)] = [:]
+        for entry in entries {
+            guard let bundleID = entry.appID else { continue }
+            let name = entry.app ?? bundleID
+            let existing = byApp[bundleID] ?? (name, 0, 0)
+            byApp[bundleID] = (existing.name, existing.characters + entry.text.count, existing.count + 1)
+        }
+        apps = byApp
+            .map { App(name: $0.value.name, bundleID: $0.key,
+                       characters: $0.value.characters, dictations: $0.value.count) }
+            .sorted { ($0.characters, $0.name) > ($1.characters, $1.name) }
     }
 
     // MARK: - Formatting
@@ -101,6 +127,25 @@ struct Metrics {
         assert(m.daily.count == 3, "zero-filled window")
         assert(m.daily.last?.words == 5, "today bucket")
         assert(m.daily.first?.words == 0, "day with no dictation reads as zero")
+        assert(m.apps.isEmpty, "entries with no recorded app stay out of the breakdown")
+
+        // Per-app breakdown: same bundle id merges, ordering is by characters.
+        let targeted = [
+            History.Entry(ts: now, text: "aaaa", duration: 1, pasted: true,
+                          app: "Slack", appID: "com.tinyspeck.slackmacgap"),
+            History.Entry(ts: now, text: "bb", duration: 1, pasted: true,
+                          app: "Slack", appID: "com.tinyspeck.slackmacgap"),
+            History.Entry(ts: now, text: "ccccccc", duration: 1, pasted: true,
+                          app: "Mail", appID: "com.apple.mail"),
+            History.Entry(ts: now, text: "ignored", duration: 1, pasted: true),
+        ]
+        let t = Metrics(entries: targeted, days: 3, calendar: calendar, now: now)
+        assert(t.apps.count == 2, "two apps, and the untagged entry is excluded")
+        assert(t.apps[0].name == "Mail", "busiest first, got \(t.apps[0].name)")
+        assert(t.apps[0].characters == 7)
+        assert(t.apps[1].name == "Slack" && t.apps[1].characters == 6,
+               "the two Slack entries merge on bundle id")
+        assert(t.apps[1].dictations == 2)
 
         // A faster speaker does save time: 100 words in 30s vs 150s of typing.
         let fast = Metrics(entries: [History.Entry(ts: now,

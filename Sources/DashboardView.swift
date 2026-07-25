@@ -81,7 +81,7 @@ struct DashboardView: View {
     }
 
     @State private var page: Page = .overview
-    @AppStorage(Settings.appearanceKey) private var appearanceRaw = Appearance.system.rawValue
+    @AppStorage(Settings.appearanceKey) private var appearanceRaw = Appearance.fallback.rawValue
 
     var body: some View {
         HStack(spacing: 0) {
@@ -229,9 +229,12 @@ private struct OverviewPage: View {
                     EmptyState()
                 } else {
                     HeroRow(metrics: metrics)
-                    if metrics.pasteRate < 1 { PasteNotice(rate: metrics.pasteRate) }
                     ActivityCard(metrics: metrics)
                     StatRow(metrics: metrics)
+                    // Hidden until there is data: history written before the app
+                    // was recorded has nothing to show here, and an empty card
+                    // reads as a broken feature rather than a young one.
+                    if !metrics.apps.isEmpty { AppBreakdown(apps: metrics.apps) }
                 }
             }
             .padding(.horizontal, 26)
@@ -410,6 +413,117 @@ private struct ActivityCard: View {
     }
 }
 
+/// Where the words actually went. Tiles rather than a bar list: the icon is the
+/// fastest way to recognise an app, so it leads, and the ranking is carried by
+/// order plus the figure itself. No bars, because a length and a number saying
+/// the same thing twice is one of them wasted.
+private struct AppBreakdown: View {
+    @ObservedObject private var themeStore = ThemeStore.shared
+    private var theme: Theme { themeStore.theme }
+    let apps: [Metrics.App]
+
+    /// Two full rows. Beyond that it stops being a summary.
+    private var shown: [Metrics.App] { Array(apps.prefix(8)) }
+    private var hidden: Int { max(0, apps.count - 8) }
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 14), count: 4)
+
+    var body: some View {
+        Panel {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Where you dictate")
+                            .font(Type.panelTitle)
+                            .foregroundStyle(Palette.ink)
+                        Text("Characters pasted, by app")
+                            .font(Type.caption)
+                            .foregroundStyle(Palette.inkMuted)
+                    }
+                    Spacer()
+                    if hidden > 0 {
+                        Text("and \(hidden) more")
+                            .font(Type.caption)
+                            .foregroundStyle(Palette.inkMuted)
+                    }
+                }
+
+                LazyVGrid(columns: columns, spacing: 14) {
+                    // Only the busiest is marked. One accent, one meaning: any
+                    // more and the tint becomes a scale nobody asked for.
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, app in
+                        Tile(app: app, leading: index == 0, accent: theme.accent, wash: theme.wash)
+                    }
+                }
+            }
+        }
+    }
+
+    private struct Tile: View {
+        let app: Metrics.App
+        let leading: Bool
+        let accent: Color
+        let wash: Color
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                AppIcon(bundleID: app.bundleID)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(app.name)
+                        .font(Type.font(12.5, .medium))
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Text(Metrics.count(app.characters))
+                        .font(Type.font(21, .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.ink)
+                    Text(app.dictations == 1 ? "1 dictation" : "\(app.dictations) dictations")
+                        .font(Type.font(10.5))
+                        .foregroundStyle(Palette.inkMuted)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(15)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(leading ? wash : Palette.canvas)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(leading ? accent.opacity(0.22) : Palette.border)
+            )
+        }
+    }
+
+    /// The app's real icon, straight from its bundle. Falls back to a neutral
+    /// glyph for anything uninstalled since, so a missing app cannot blank a tile.
+    private struct AppIcon: View {
+        let bundleID: String
+
+        private var image: NSImage? {
+            guard let url = NSWorkspace.shared
+                .urlForApplication(withBundleIdentifier: bundleID) else { return nil }
+            return NSWorkspace.shared.icon(forFile: url.path)
+        }
+
+        var body: some View {
+            Group {
+                if let image {
+                    Image(nsImage: image).resizable().interpolation(.high)
+                } else {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(Palette.borderSoft)
+                        .overlay(Image(systemName: "app.dashed")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Palette.inkMuted))
+                }
+            }
+            .frame(width: 42, height: 42)
+        }
+    }
+}
+
 private struct StatRow: View {
     let metrics: Metrics
 
@@ -449,27 +563,6 @@ private struct StatRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-    }
-}
-
-/// Shown only when pastes are failing — a health check, not a vanity stat.
-private struct PasteNotice: View {
-    let rate: Double
-
-    var body: some View {
-        HStack(spacing: 9) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(Type.font(11))
-                .foregroundStyle(Palette.warning)
-            Text("\(Int(((1 - rate) * 100).rounded()))% of dictations were copied but not pasted. Grant Sono Accessibility access in System Settings to paste automatically.")
-                .font(Type.font(11))
-                .foregroundStyle(Palette.warning)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 13)
-        .padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 9).fill(Palette.warningWash))
-        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Palette.warning.opacity(0.18)))
     }
 }
 
@@ -553,8 +646,8 @@ struct Panel<Content: View>: View {
 
 private struct SettingsPage: View {
     @ObservedObject private var themeStore = ThemeStore.shared
-    @AppStorage(Settings.polishKey) private var polishEnabled = true
-    @AppStorage(Settings.appearanceKey) private var appearanceRaw = Appearance.system.rawValue
+    @AppStorage(Settings.polishKey) private var polishEnabled = false
+    @AppStorage(Settings.appearanceKey) private var appearanceRaw = Appearance.fallback.rawValue
     @AppStorage(Settings.soundsKey) private var soundsEnabled = true
     private var theme: Theme { themeStore.theme }
 
@@ -570,7 +663,7 @@ private struct SettingsPage: View {
                         ThemePicker()
                     }
                     SettingsSection("Transcription",
-                                    note: "Turning enhancement off skips the language model, so text appears sooner.") {
+                                    note: "Enhancement removes fillers, fixes self-corrections and turns spoken lists into real lists. It runs on this Mac and adds a moment before the text lands, so it starts switched off.") {
                         VStack(spacing: 8) {
                             PolishRow(enabled: $polishEnabled)
                             ToggleRow(icon: "speaker.wave.2",
@@ -593,11 +686,28 @@ private struct SettingsPage: View {
                                 title: "Parakeet TDT 0.6B v3 · on-device",
                                 detail: "Speech recognition and enhancement both run locally. Audio never leaves this Mac.")
                     }
-                    SettingsSection("Licence", note: nil) {
-                        LicenceRow()
-                    }
                     SettingsSection("Updates", note: nil) {
                         UpdateRow()
+                    }
+                    // Not decoration: Parakeet is CC BY 4.0 and sherpa-onnx is
+                    // Apache 2.0, both of which require attribution wherever the
+                    // work is redistributed. NOTICE.md carries the full text.
+                    SettingsSection("Acknowledgements",
+                                    note: "Sono is free and MIT licensed. It stands on other people's work.") {
+                        VStack(spacing: 8) {
+                            InfoRow(icon: "waveform",
+                                    title: "Parakeet TDT 0.6B v3 · NVIDIA",
+                                    detail: "CC BY 4.0. Quantised to int8 for this app; the unmodified original is on Hugging Face.")
+                            InfoRow(icon: "shippingbox",
+                                    title: "sherpa-onnx · Xiaomi",
+                                    detail: "Apache 2.0, with ONNX Runtime by Microsoft under MIT. Runs the speech model.")
+                            InfoRow(icon: "arrow.down.circle",
+                                    title: "Sparkle",
+                                    detail: "MIT. Checks for and installs updates.")
+                            InfoRow(icon: "textformat",
+                                    title: "Plus Jakarta Sans and Fraunces",
+                                    detail: "SIL Open Font License 1.1.")
+                        }
                     }
                     SettingsSection("Uninstall",
                                     note: "Dragging Sono to the Trash removes only the app. The model and your history would stay on disk.") {
@@ -955,136 +1065,26 @@ private struct SmallButton: View {
     }
 }
 
-/// Trial progress, or licence status with a key field. Shown in Settings, and
-/// surfaced on the Overview once the trial is nearly spent.
-private struct LicenceRow: View {
-    @ObservedObject private var licensing = Licensing.shared
-    @ObservedObject private var themeStore = ThemeStore.shared
-    @State private var key = ""
-    @State private var showingDeactivate = false
-
-    private var theme: Theme { themeStore.theme }
-
-    var body: some View {
-        Panel(padding: 15) {
-            VStack(alignment: .leading, spacing: 13) {
-                HStack(spacing: 12) {
-                    Image(systemName: icon)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(licensing.state == .licensed ? theme.accent : Palette.inkMuted)
-                        .frame(width: 28, height: 28)
-                        .background(RoundedRectangle(cornerRadius: 8)
-                            .fill(licensing.state == .licensed ? theme.wash : Palette.borderSoft))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(Type.font(12, .medium))
-                            .foregroundStyle(Palette.ink)
-                        Text(subtitle)
-                            .font(Type.caption)
-                            .foregroundStyle(Palette.inkSecondary)
-                    }
-                    Spacer(minLength: 8)
-                    if licensing.state == .licensed {
-                        SmallButton(title: "Deactivate this Mac", filled: false) {
-                            showingDeactivate = true
-                        }
-                    }
-                }
-
-                if case .licensed = licensing.state {} else {
-                    // Trial meter: the same "time saved" idea, but showing what's left.
-                    GeometryReader { geometry in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Palette.borderSoft)
-                            Capsule().fill(theme.accent)
-                                .frame(width: geometry.size.width * progress)
-                        }
-                    }
-                    .frame(height: 5)
-
-                    HStack(spacing: 8) {
-                        TextField("Licence key", text: $key)
-                            .textFieldStyle(.plain)
-                            .font(Type.font(11.5))
-                            .padding(.horizontal, 9)
-                            .padding(.vertical, 6)
-                            .background(RoundedRectangle(cornerRadius: 7).fill(Palette.canvas))
-                            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.border))
-                            .onSubmit { Task { await licensing.activate(key: key) } }
-                        SmallButton(title: licensing.isWorking ? "Checking…" : "Activate", filled: true) {
-                            Task { await licensing.activate(key: key) }
-                        }
-                        Link(destination: URL(string: Licensing.buyURL)!) {
-                            Text("Buy · $39")
-                                .font(Type.font(11, .medium))
-                                .foregroundStyle(theme.accent)
-                        }
-                    }
-
-                    if let error = licensing.lastError {
-                        Text(error)
-                            .font(Type.caption)
-                            .foregroundStyle(Palette.warning)
-                    }
-                }
-            }
-        }
-        .confirmationDialog("Deactivate Sono on this Mac?", isPresented: $showingDeactivate) {
-            Button("Deactivate", role: .destructive) {
-                Task { await licensing.deactivateThisMac() }
-            }
-        } message: {
-            Text("This frees the activation so you can use your key on another Mac. Dictation stops working here until you activate again.")
-        }
-    }
-
-    private var progress: Double {
-        Double(licensing.used) / Double(Licensing.trialLimit)
-    }
-
-    private var icon: String {
-        switch licensing.state {
-        case .licensed: "checkmark.seal"
-        case .trialEnded: "lock"
-        case .trial: "hourglass"
-        }
-    }
-
-    private var title: String {
-        switch licensing.state {
-        case .licensed: "Licensed"
-        case .trialEnded: "Trial ended"
-        case .trial: "Free trial"
-        }
-    }
-
-    private var subtitle: String {
-        switch licensing.state {
-        case .licensed: "Thank you. This Mac is activated"
-        case .trialEnded: "Enter your key to keep dictating"
-        case .trial:
-            "\(licensing.remaining) of \(Licensing.trialLimit) free dictations left, then $39 once"
-        }
-    }
-}
-
-/// The bottom of the sidebar. Once someone has paid, this is the one place the
-/// app says thank you — so it uses the display face and warm wording rather than
-/// restating a feature. Before that, it quietly shows what's left of the trial.
+/// The bottom of the sidebar. Sono is free, so there is nothing to sell here and
+/// nothing to count down; it just says what the app is.
 private struct SidebarFooter: View {
-    @ObservedObject private var licensing = Licensing.shared
     @ObservedObject private var themeStore = ThemeStore.shared
-    @State private var appeared = false
-
     private var theme: Theme { themeStore.theme }
 
     var body: some View {
-        Group {
-            switch licensing.state {
-            case .licensed: licensed
-            case .trial: trial
-            case .trialEnded: ended
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(theme.accent)
+                Text("Sono is free")
+                    .font(Type.font(13, .semibold))
+                    .foregroundStyle(Palette.ink)
             }
+            Text("No account, no licence, no expiry.")
+                .font(Type.caption)
+                .foregroundStyle(Palette.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(13)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1095,67 +1095,10 @@ private struct SidebarFooter: View {
                     .strokeBorder(theme.accent.opacity(0.14)))
         )
         .padding(12)
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.5).delay(0.2)) { appeared = true }
-        }
-    }
-
-    private var licensed: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 11))
-                    .foregroundStyle(theme.accent)
-                    .scaleEffect(appeared ? 1 : 0.6)
-                    .opacity(appeared ? 1 : 0)
-                Text("Sono is yours")
-                    .font(Type.font(14, .semibold))
-                    .foregroundStyle(Palette.ink)
-            }
-            Text("Yours for good. No subscription, no expiry.")
-                .font(Type.caption)
-                .foregroundStyle(Palette.inkSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var trial: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text("Free trial")
-                .font(Type.font(11, .semibold))
-                .foregroundStyle(theme.accent)
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(theme.accent.opacity(0.16))
-                    Capsule().fill(theme.accent)
-                        .frame(width: geometry.size.width * progress)
-                }
-            }
-            .frame(height: 4)
-            Text("\(licensing.remaining) of \(Licensing.trialLimit) dictations left")
-                .font(Type.caption)
-                .foregroundStyle(Palette.inkSecondary)
-        }
-    }
-
-    private var ended: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Trial ended")
-                .font(Type.font(11, .semibold))
-                .foregroundStyle(Palette.warning)
-            Text("Add your licence in Settings to keep dictating.")
-                .font(Type.caption)
-                .foregroundStyle(Palette.inkSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var progress: Double {
-        min(1, Double(licensing.used) / Double(Licensing.trialLimit))
     }
 }
 
-/// Sits above the licence footer when a newer version exists. This is the entry
+/// Sits above the sidebar footer when a newer version exists. This is the entry
 /// point people described wanting: noticed in place, not a modal that steals focus.
 private struct UpdateBanner: View {
     @ObservedObject private var updater = Updater.shared

@@ -41,6 +41,8 @@ final class Dictation {
         #if DEBUG
         Cleanup.selfTest()
         Metrics.selfTest()
+        Injector.selfTest()
+        VoiceActivity.selfTest()
         #endif
         recorder.onLevel = { [weak self] in self?.island.model.pushLevel($0) }
         island.model.onTap = { [weak self] in self?.toggle() }
@@ -56,13 +58,16 @@ final class Dictation {
         guard await Recorder.requestMicAccess() else {
             island.model.phase = .flash("Mic denied"); return
         }
-        island.model.phase = .loading("Speech…")
-        let speechOK = await AppleTranscriber.requestAccess()
-        guard speechOK else {
-            island.model.phase = .flash("No speech access"); return
-        }
-        Injector.ensureAccessibility()   // prompts once; paste falls back to copy until granted
-        await Licensing.shared.validateIfNeeded()
+        // No Speech Recognition request: transcription is Parakeet via sherpa-onnx,
+        // and Apple's recogniser is never reached on the shipping path. Asking for
+        // a permission the app does not use is a poor look for one that promises
+        // nothing leaves the Mac.
+
+        // Accessibility asked for here, next to the microphone, so both are
+        // settled before the user starts working. macOS cannot grant it in place
+        // and opens System Settings, which is disruptive wherever it happens, so
+        // it belongs in setup rather than interrupting someone mid-sentence.
+        Injector.ensureAccessibility()
 
         // The model is downloaded on first launch — a fresh install must work
         // with no manual setup. Subsequent launches skip straight past this.
@@ -131,10 +136,6 @@ final class Dictation {
         guard case .ready = island.model.phase, !busy else {
             return
         }
-        guard Licensing.shared.state.isUnlocked else {
-            flash("Trial ended")
-            return
-        }
         do {
             island.model.resetLevels()
             Sounds.playStart()          // before the engine: it reconfigures the device
@@ -150,27 +151,33 @@ final class Dictation {
         let samples = recorder.stop()
         Sounds.playStop()
 
-        // Under 0.3s is a stray tap, not speech.
-        guard samples.count > Int(Recorder.sampleRate * 0.3) else {
+        // Drop the quiet off both ends, and drop the recording entirely if nobody
+        // spoke. Replaces a flat 0.3s duration guard, which could not tell a long
+        // silence from a long sentence: the model was billed for leading quiet,
+        // and room tone alone could still come back as a word.
+        guard let speech = VoiceActivity.trim(samples) else {
             island.model.phase = .ready; return
         }
-
 
         busy = true
         Task {
             defer { busy = false }
             do {
-                let raw = try await transcriber.transcribe(samples)
+                let raw = try await transcriber.transcribe(speech)
                 // LLM sees the RAW transcript (strip would eat its correction
                 // markers); regex strip runs after, catching missed fillers.
                 let text = (Settings.polishEnabled && Polisher.isAvailable)
                     ? Cleanup.strip(await Polisher.polish(raw))
                     : Cleanup.strip(raw)
+                // Read before the paste, while the target is still frontmost.
+                let target = Injector.target()
                 let pasted = Injector.paste(text + " ")
+                // Trimmed length, not raw: "time spoken" should mean time spoken,
+                // not how long the key was held.
                 History.shared.add(text: text,
-                                   duration: Double(samples.count) / Recorder.sampleRate,
-                                   pasted: pasted)
-                Licensing.shared.recordDictation()
+                                   duration: Double(speech.count) / Recorder.sampleRate,
+                                   pasted: pasted,
+                                   app: target?.name, appID: target?.bundleID)
                 flash(pasted ? "Pasted" : "Copied to clipboard")
             } catch {
                 flash("No speech")

@@ -6,6 +6,8 @@
 	<string>Fonts</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Sono</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIconFile</key>
@@ -24,8 +26,6 @@
 	<string>1</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Sono transcribes your speech on this Mac. Audio never leaves the device.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Sono uses on-device speech recognition. Nothing is sent to a server.</string>
 	<key>SUEnableSystemProfiling</key>
 	<false/>
 	<key>SUFeedURL</key>

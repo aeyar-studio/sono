@@ -15,8 +15,11 @@ enum Settings {
     /// Run transcripts through Apple Intelligence for self-corrections and
     /// grammar. Off means raw Parakeet output plus the regex filler sweep —
     /// noticeably faster, less tidy. Default on.
+    /// Off by default. The polish pass is what makes Sono more than a transcript,
+    /// but it adds a beat before the text lands, and a first run should feel
+    /// instant. Users who want the cleanup turn it on in Settings.
     static var polishEnabled: Bool {
-        UserDefaults.standard.object(forKey: polishKey) as? Bool ?? true
+        UserDefaults.standard.object(forKey: polishKey) as? Bool ?? false
     }
 
     /// Check for updates in the background, once a day. Default on; the switch
@@ -36,6 +39,11 @@ enum Settings {
 /// people's windows, where a light pill would disappear on light backgrounds.
 enum Appearance: String, CaseIterable, Identifiable {
     case system, light, dark
+
+    /// Light rather than system. The cream palette is the one the app was
+    /// designed and tuned in, and it is what someone should meet first;
+    /// following the system means a Mac in dark mode shows a face nobody chose.
+    static let fallback = Appearance.light
 
     var id: String { rawValue }
     var name: String {

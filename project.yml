@@ -36,9 +36,12 @@ targets:
       path: Info.plist
       properties:
         NSMicrophoneUsageDescription: Sono transcribes your speech on this Mac. Audio never leaves the device.
-        NSSpeechRecognitionUsageDescription: Sono uses on-device speech recognition. Nothing is sent to a server.
         CFBundleShortVersionString: "0.1"
         CFBundleIconFile: Sono
+        # The canonical user-facing name. Without it macOS falls back to the
+        # bundle filename in some panes, which is how "Sono.app" appears instead
+        # of "Sono".
+        CFBundleDisplayName: Sono
         # Sparkle. The private key lives in the login Keychain and never ships;
         # this public half is what verifies a downloaded update was signed by us.
         SUPublicEDKey: c/caRWSt7Qqdvik5VuW/poI3O8uMWtdJURb51uFihzY=
@@ -53,7 +56,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.aeyar.Sono
         DEVELOPMENT_TEAM: J9JLP45K5F
         CODE_SIGN_STYLE: Automatic
-        MARKETING_VERSION: "0.1"
+        MARKETING_VERSION: "1.0"
         SWIFT_VERSION: "5.0"   # ponytail: Swift 6 strict concurrency vs AVAudioEngine taps is a fight for later
         ENABLE_HARDENED_RUNTIME: true
         SWIFT_INCLUDE_PATHS: $(PROJECT_DIR)/Vendor/sherpa

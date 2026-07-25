@@ -75,13 +75,38 @@ while IFS= read -r dylib; do
   echo "  signed: $(basename "$dylib")"
 done < <(find "$APP/Contents/Frameworks" -name "*.dylib" -type f 2>/dev/null)
 
+# Sparkle arrives pre-signed, and Xcode strips Headers/, PrivateHeaders/ and
+# Modules/ when it embeds the framework. Those paths are still sealed in the
+# original signature, so --deep --strict reports "a sealed resource is missing"
+# and the release stops before it ever reaches Apple. Re-signing the framework
+# writes a seal that matches what actually ships. Its own nested code goes
+# first, for the same innermost-first reason as everything else here.
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
+if [ -d "$SPARKLE" ]; then
+  for nested in \
+    "$SPARKLE/Versions/Current/XPCServices/Downloader.xpc" \
+    "$SPARKLE/Versions/Current/XPCServices/Installer.xpc" \
+    "$SPARKLE/Versions/Current/Updater.app" \
+    "$SPARKLE/Versions/Current/Autoupdate"; do
+    [ -e "$nested" ] || continue
+    codesign --force --timestamp --options runtime --sign "$IDENTITY" "$nested"
+    echo "  signed: Sparkle/$(basename "$nested")"
+  done
+  codesign --force --timestamp --options runtime --sign "$IDENTITY" "$SPARKLE"
+  echo "  signed: Sparkle.framework"
+fi
+
 codesign --force --timestamp --options runtime \
   --entitlements "$ROOT/Sono.entitlements" \
   --sign "$IDENTITY" "$APP"
 echo "  signed: $APP_NAME.app"
 
 step "Verifying signature"
-codesign --verify --deep --strict --verbose=2 "$APP" 2>&1 | sed 's/^/  /'
+# Not piped into sed: a pipeline reports the last command's status, so a failed
+# verify used to look like success and the script sailed on.
+if ! codesign --verify --deep --strict --verbose=2 "$APP" 2>&1; then
+  fail "Signature verification failed. Nothing was submitted to Apple."
+fi
 
 # ─────────────────────────────────────────────────── package
 step "Packaging DMG"

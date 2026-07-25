@@ -16,6 +16,11 @@ final class History: ObservableObject {
         let text: String
         let duration: Double     // seconds of audio
         let pasted: Bool         // false = only copied to clipboard
+        /// Where the text went. Optional because entries written before this
+        /// existed have no app, and a non-optional would fail to decode the
+        /// whole file. Older lines simply sit outside the per-app breakdown.
+        var app: String?         // display name, e.g. "Slack"
+        var appID: String?       // bundle id, the stable key across renames
         var id: Date { ts }
     }
 
@@ -60,8 +65,10 @@ final class History: ObservableObject {
 
     // MARK: - Mutation
 
-    func add(text: String, duration: Double, pasted: Bool) {
-        let entry = Entry(ts: Date(), text: text, duration: duration, pasted: pasted)
+    func add(text: String, duration: Double, pasted: Bool,
+             app: String? = nil, appID: String? = nil) {
+        let entry = Entry(ts: Date(), text: text, duration: duration, pasted: pasted,
+                          app: app, appID: appID)
         // Union with whatever is on disk first, so a second Mac's entries are not
         // clobbered by this append.
         entries = Self.merge(Self.load(), entries + [entry])
