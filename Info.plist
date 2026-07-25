@@ -26,5 +26,13 @@
 	<string>Sono transcribes your speech on this Mac. Audio never leaves the device.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Sono uses on-device speech recognition. Nothing is sent to a server.</string>
+	<key>SUEnableSystemProfiling</key>
+	<false/>
+	<key>SUFeedURL</key>
+	<string>https://heysono.app/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>c/caRWSt7Qqdvik5VuW/poI3O8uMWtdJURb51uFihzY=</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 </dict>
 </plist>

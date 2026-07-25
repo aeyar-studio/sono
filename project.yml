@@ -5,6 +5,11 @@ options:
     macOS: "26.0"
   createIntermediateGroups: true
 
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.9.4
+
 targets:
   Sono:
     type: application
@@ -16,6 +21,8 @@ targets:
       - path: Resources/Fonts
         type: folder
         buildPhase: resources
+    dependencies:
+      - package: Sparkle
     entitlements:
       path: Sono.entitlements
       properties:
@@ -32,6 +39,13 @@ targets:
         NSSpeechRecognitionUsageDescription: Sono uses on-device speech recognition. Nothing is sent to a server.
         CFBundleShortVersionString: "0.1"
         CFBundleIconFile: Sono
+        # Sparkle. The private key lives in the login Keychain and never ships;
+        # this public half is what verifies a downloaded update was signed by us.
+        SUPublicEDKey: c/caRWSt7Qqdvik5VuW/poI3O8uMWtdJURb51uFihzY=
+        SUFeedURL: https://heysono.app/appcast.xml
+        SUScheduledCheckInterval: 86400
+        # No macOS version, CPU or Mac model appended to the update check.
+        SUEnableSystemProfiling: false
         # Registers the bundled font family without any code.
         ATSApplicationFontsPath: Fonts
     settings:

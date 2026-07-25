@@ -131,6 +131,7 @@ private struct Sidebar: View {
 
             Spacer()
 
+            UpdateBanner()
             SidebarFooter()
         }
         .frame(width: 216)
@@ -594,6 +595,9 @@ private struct SettingsPage: View {
                     }
                     SettingsSection("Licence", note: nil) {
                         LicenceRow()
+                    }
+                    SettingsSection("Updates", note: nil) {
+                        UpdateRow()
                     }
                     SettingsSection("Uninstall",
                                     note: "Dragging Sono to the Trash removes only the app. The model and your history would stay on disk.") {
@@ -1148,5 +1152,82 @@ private struct SidebarFooter: View {
 
     private var progress: Double {
         min(1, Double(licensing.wordsUsed) / Double(Licensing.trialWordLimit))
+    }
+}
+
+/// Sits above the licence footer when a newer version exists. This is the entry
+/// point people described wanting: noticed in place, not a modal that steals focus.
+private struct UpdateBanner: View {
+    @ObservedObject private var updater = Updater.shared
+    @ObservedObject private var themeStore = ThemeStore.shared
+
+    var body: some View {
+        if let version = updater.availableVersion {
+            Button {
+                updater.checkForUpdates()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(themeStore.theme.accent)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Version \(version) is ready")
+                            .font(Type.font(11.5, .semibold))
+                            .foregroundStyle(Palette.ink)
+                        Text("Click to update and relaunch")
+                            .font(Type.font(10))
+                            .foregroundStyle(Palette.inkSecondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(11)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(themeStore.theme.tint))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+        }
+    }
+}
+
+private struct UpdateRow: View {
+    @ObservedObject private var updater = Updater.shared
+    @ObservedObject private var themeStore = ThemeStore.shared
+    @AppStorage(Settings.autoUpdateKey) private var automatic = true
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ToggleRow(icon: "arrow.triangle.2.circlepath",
+                      title: "Check for updates automatically",
+                      detail: "Once a day. Sono sends only its version number, never your text.",
+                      isOn: $automatic)
+            Panel(padding: 15) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Version \(updater.currentVersion)")
+                            .font(Type.font(12, .medium))
+                            .foregroundStyle(Palette.ink)
+                        Text(status)
+                            .font(Type.caption)
+                            .foregroundStyle(Palette.inkSecondary)
+                    }
+                    Spacer(minLength: 12)
+                    SmallButton(title: "Check now", filled: false) {
+                        updater.checkForUpdates()
+                    }
+                }
+            }
+        }
+        .onChange(of: automatic) { _, newValue in updater.automaticChecks = newValue }
+    }
+
+    private var status: String {
+        if let version = updater.availableVersion { return "Version \(version) is available" }
+        if let checked = updater.lastChecked {
+            return "Last checked \(checked.formatted(.relative(presentation: .named)))"
+        }
+        return "Not checked yet"
     }
 }

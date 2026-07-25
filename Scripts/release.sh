@@ -45,6 +45,9 @@ echo "  notary profile: $NOTARY_PROFILE"
 [ -f "$ROOT/Vendor/sherpa/lib/libsherpa-onnx-c-api.dylib" ] \
   || fail "Vendored libraries missing. Run Scripts/fetch-sherpa.sh"
 
+[ -x "$ROOT/Scripts/bin/sign_update" ] \
+  || fail "Sparkle tools missing. Run Scripts/fetch-sparkle-tools.sh"
+
 VERSION="$(grep -E "^\s+MARKETING_VERSION:" project.yml | sed 's/.*: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/' || true)"
 [ -n "$VERSION" ] || fail "Could not read MARKETING_VERSION from project.yml"
 echo "  version: $VERSION"
@@ -113,20 +116,51 @@ xcrun stapler validate "$DMG" | sed 's/^/  /'
 step "Gatekeeper assessment (what a customer's Mac will decide)"
 spctl --assess --type open --context context:primary-signature -vv "$DMG" 2>&1 | sed 's/^/  /'
 
+# ─────────────────────────────────────────────────── appcast
+# Signed with the EdDSA key in the login Keychain. Without this signature Sparkle
+# refuses the download, which is what makes a hijacked domain harmless.
+step "Signing for Sparkle and writing the appcast"
+SIGNATURE_LINE="$("$ROOT/Scripts/bin/sign_update" "$DMG")"
+[ -n "$SIGNATURE_LINE" ] || fail "sign_update produced nothing. Has generate_keys been run on this Mac?"
+SIZE="$(stat -f%z "$DMG")"
+PUBDATE="$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+NOTES_URL="https://heysono.app/releases/notes-$VERSION.html"
+
+APPCAST="$DIST_DIR/appcast.xml"
+cat > "$APPCAST" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Sono</title>
+    <item>
+      <title>$VERSION</title>
+      <pubDate>$PUBDATE</pubDate>
+      <sparkle:releaseNotesLink>$NOTES_URL</sparkle:releaseNotesLink>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://heysono.app/releases/$APP_NAME-$VERSION.dmg"
+                 sparkle:version="$VERSION"
+                 sparkle:shortVersionString="$VERSION"
+                 $SIGNATURE_LINE
+                 type="application/octet-stream" />
+    </item>
+  </channel>
+</rss>
+XML
+echo "  $APPCAST"
+
 step "Done"
 SHA="$(shasum -a 256 "$DMG" | awk '{print $1}')"
-SIZE="$(stat -f%z "$DMG")"
 cat <<SUMMARY
 
   file    $DMG
   size    $SIZE bytes
   sha256  $SHA
 
-  Sparkle appcast item (once Sparkle is wired up):
-    <item>
-      <title>$VERSION</title>
-      <enclosure url="https://heysono.app/releases/$APP_NAME-$VERSION.dmg"
-                 sputils:version="$VERSION" length="$SIZE"
-                 type="application/octet-stream" />
-    </item>
+  To publish:
+    1. upload $APP_NAME-$VERSION.dmg  →  https://heysono.app/releases/
+    2. upload appcast.xml             →  https://heysono.app/appcast.xml
+    3. write notes-$VERSION.html      →  https://heysono.app/releases/
+
+  Existing users see the update within a day, or immediately via Check now.
+  NOTE: the appcast must already be reachable, or nobody gets this release.
 SUMMARY

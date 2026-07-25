@@ -10,12 +10,20 @@ enum Settings {
     /// Folder holding history.jsonl. Empty = Application Support (local only).
     /// Point it at iCloud Drive to sync across Macs.
     static let historyFolderKey = "historyFolder"
+    static let autoUpdateKey = "automaticUpdateChecks"
 
     /// Run transcripts through Apple Intelligence for self-corrections and
     /// grammar. Off means raw Parakeet output plus the regex filler sweep —
     /// noticeably faster, less tidy. Default on.
     static var polishEnabled: Bool {
         UserDefaults.standard.object(forKey: polishKey) as? Bool ?? true
+    }
+
+    /// Check for updates in the background, once a day. Default on; the switch
+    /// exists because this audience deserves the choice, and a manual check still
+    /// works when it is off.
+    static var automaticUpdateChecks: Bool {
+        UserDefaults.standard.object(forKey: autoUpdateKey) as? Bool ?? true
     }
 
     /// Chime when dictation starts and stops. Default on.
