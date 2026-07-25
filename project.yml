@@ -1,0 +1,59 @@
+name: Sono
+options:
+  bundleIdPrefix: com.aeyar
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+targets:
+  Sono:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+      - path: Assets/Sono.icns
+        buildPhase: resources
+      - path: Resources/Fonts
+        type: folder
+        buildPhase: resources
+    entitlements:
+      path: Sono.entitlements
+      properties:
+        # ponytail: sandbox OFF — CGEvent paste needs it. Direct distribution.
+        com.apple.security.app-sandbox: false
+        # Hardened runtime denies mic instantly (no dialog!) without this.
+        com.apple.security.device.audio-input: true
+        # Hardened runtime blocks the sherpa-onnx dylibs (different signer) without this.
+        com.apple.security.cs.disable-library-validation: true
+    info:
+      path: Info.plist
+      properties:
+        NSMicrophoneUsageDescription: Sono transcribes your speech on this Mac. Audio never leaves the device.
+        NSSpeechRecognitionUsageDescription: Sono uses on-device speech recognition. Nothing is sent to a server.
+        CFBundleShortVersionString: "0.1"
+        CFBundleIconFile: Sono
+        # Registers the bundled font family without any code.
+        ATSApplicationFontsPath: Fonts
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aeyar.Sono
+        DEVELOPMENT_TEAM: J9JLP45K5F
+        CODE_SIGN_STYLE: Automatic
+        MARKETING_VERSION: "0.1"
+        SWIFT_VERSION: "5.0"   # ponytail: Swift 6 strict concurrency vs AVAudioEngine taps is a fight for later
+        ENABLE_HARDENED_RUNTIME: true
+        SWIFT_INCLUDE_PATHS: $(PROJECT_DIR)/Vendor/sherpa
+        LIBRARY_SEARCH_PATHS: $(PROJECT_DIR)/Vendor/sherpa/lib
+        OTHER_LDFLAGS: -lsherpa-onnx-c-api -lonnxruntime
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+    postBuildScripts:
+      - name: Embed sherpa dylibs
+        script: |
+          set -e
+          DEST="$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH"
+          mkdir -p "$DEST"
+          for lib in libsherpa-onnx-c-api.dylib libonnxruntime.dylib libonnxruntime.1.24.4.dylib; do
+            cp -f "$PROJECT_DIR/Vendor/sherpa/lib/$lib" "$DEST/$lib"
+            codesign --force --sign - "$DEST/$lib"
+          done
+        basedOnDependencyAnalysis: false

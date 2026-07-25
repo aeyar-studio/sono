@@ -1,0 +1,55 @@
+import SwiftUI
+
+/// User preferences. Read from the dictation loop (not a SwiftUI view), written
+/// by the dashboard's @AppStorage bindings — same UserDefaults keys.
+enum Settings {
+    static let polishKey = "polishEnabled"
+    static let themeKey = "accentTheme"
+    static let appearanceKey = "appearance"
+    static let soundsKey = "soundsEnabled"
+    /// Folder holding history.jsonl. Empty = Application Support (local only).
+    /// Point it at iCloud Drive to sync across Macs.
+    static let historyFolderKey = "historyFolder"
+
+    /// Run transcripts through Apple Intelligence for self-corrections and
+    /// grammar. Off means raw Parakeet output plus the regex filler sweep —
+    /// noticeably faster, less tidy. Default on.
+    static var polishEnabled: Bool {
+        UserDefaults.standard.object(forKey: polishKey) as? Bool ?? true
+    }
+
+    /// Chime when dictation starts and stops. Default on.
+    static var soundsEnabled: Bool {
+        UserDefaults.standard.object(forKey: soundsKey) as? Bool ?? true
+    }
+}
+
+/// Dashboard appearance. The floating island is always dark — it sits over other
+/// people's windows, where a light pill would disappear on light backgrounds.
+enum Appearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+
+    var id: String { rawValue }
+    var name: String {
+        switch self {
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .system: "circle.lefthalf.filled"
+        case .light: "sun.max"
+        case .dark: "moon"
+        }
+    }
+    /// nil follows the system setting.
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
