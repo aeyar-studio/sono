@@ -44,18 +44,36 @@ final class Licensing: ObservableObject {
         /// Hardware ID the stored activation belongs to.
         static let device = "activationDevice"
         static let validated = "lastValidated"
+        /// When this install first ran. Kept separately from the word counter so
+        /// that clearing the counter alone does not hand back a fresh trial on an
+        /// install that has been around for months.
+        static let firstRun = "firstRun"
     }
+
+    /// A trial that has existed longer than this cannot be restarted by wiping the
+    /// word counter. Generous: someone who genuinely trialled Sono, left it for a
+    /// month and came back still gets their remaining words.
+    private static let trialWindow: TimeInterval = 45 * 24 * 60 * 60
 
     /// How long between server checks. A revoked or refunded key stops working
     /// within a week, without pestering the server on every launch.
     private static let revalidateAfter: TimeInterval = 7 * 24 * 60 * 60
 
     private init() {
+        if Keychain.get(Key.firstRun) == nil {
+            Keychain.set(String(Date().timeIntervalSince1970), for: Key.firstRun)
+        }
         if Keychain.get(Key.license) != nil {
             state = .licensed
         } else {
-            state = Self.stateForWords(wordsUsed)
+            state = stateForWords(wordsUsed)
         }
+    }
+
+    /// Days since this install first ran, or nil if that was never recorded.
+    private var installAge: TimeInterval? {
+        guard let stamp = Double(Keychain.get(Key.firstRun) ?? "") else { return nil }
+        return Date().timeIntervalSince1970 - stamp
     }
 
     // MARK: - Trial metering
@@ -64,8 +82,14 @@ final class Licensing: ObservableObject {
 
     var wordsRemaining: Int { max(0, Self.trialWordLimit - wordsUsed) }
 
-    private static func stateForWords(_ used: Int) -> State {
-        used >= trialWordLimit ? .trialEnded : .trial(wordsUsed: used)
+    private func stateForWords(_ used: Int) -> State {
+        if used >= Self.trialWordLimit { return .trialEnded }
+        // An old install with a suspiciously empty counter means the counter was
+        // cleared, not that dictation never happened. The trial does not restart.
+        if let age = installAge, age > Self.trialWindow, used < Self.trialWordLimit / 4 {
+            return .trialEnded
+        }
+        return .trial(wordsUsed: used)
     }
 
     /// Called after each dictation. No-op once licensed.
@@ -73,7 +97,7 @@ final class Licensing: ObservableObject {
         guard state != .licensed, words > 0 else { return }
         let total = wordsUsed + words
         Keychain.set(String(total), for: Key.words)
-        state = Self.stateForWords(total)
+        state = stateForWords(total)
     }
 
     // MARK: - Activation
@@ -128,7 +152,7 @@ final class Licensing: ObservableObject {
             let json = try await post("/licenses/validate", body: ["license_key": key])
             if let valid = json["valid"] as? Bool, valid == false {
                 clearLocalLicense()
-                state = Self.stateForWords(wordsUsed)
+                state = stateForWords(wordsUsed)
                 lastError = "This licence is no longer valid."
             } else {
                 Keychain.set(String(Date().timeIntervalSince1970), for: Key.validated)
@@ -148,7 +172,7 @@ final class Licensing: ObservableObject {
                                 body: ["license_key": key, "license_key_instance_id": instance])
         }
         clearLocalLicense()
-        state = Self.stateForWords(wordsUsed)
+        state = stateForWords(wordsUsed)
     }
 
     private func clearLocalLicense() {
