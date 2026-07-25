@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sono · Dictation that stays on your Mac</title>
+<meta name="description" content="Speak anywhere on your Mac and get finished text. Fillers gone, grammar fixed, spoken lists turned into real lists. Nothing is uploaded. Free." />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
+<meta property="og:title" content="Sono" />
+<meta property="og:description" content="Dictation that stays on your Mac. Free." />
+</head>
+<body>
+
+<!-- Paper grain. A flat cream fill reads digital; a little tooth reads made. -->
+<svg class="grain" aria-hidden="true"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" /></filter><rect width="100%" height="100%" filter="url(#g)" /></svg>
+
+<header class="nav">
+  <a class="brand" href="#top" aria-label="Sono home">
+    <svg class="mark" viewBox="0 0 34 20" aria-hidden="true">
+      <rect x="0"  y="7.2" width="4" height="5.6" rx="2" />
+      <rect x="7.5" y="4.2" width="4" height="11.6" rx="2" />
+      <rect x="15" y="0"   width="4" height="20"   rx="2" />
+      <rect x="22.5" y="4.2" width="4" height="11.6" rx="2" />
+      <rect x="30" y="7.2" width="4" height="5.6" rx="2" />
+    </svg>
+    <span class="wordmark">Sono</span>
+  </a>
+  <nav class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#privacy">Privacy</a>
+    <a class="btn btn-solid btn-sm" href="/releases/Sono-1.0.dmg" download>Download</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- ─────────────────────────────── hero -->
+  <section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <p class="eyebrow reveal">Dictation for macOS</p>
+    <h1 class="reveal">
+      <span class="line">Talk to your Mac.</span>
+      <span class="line accent-text">Nobody else hears it.</span>
+    </h1>
+    <p class="lede reveal">
+      Hold a key, say what you mean, and finished text lands in whatever app you
+      are using. The speech model runs on your Mac. Not in a datacentre, not on
+      our servers, because we do not have any.
+    </p>
+
+    <div class="cta reveal">
+      <a class="btn btn-solid" href="/releases/Sono-1.0.dmg" download>
+        <!-- viewBox cropped to the mark's own ink, so it fills the box it is
+             given instead of floating in 24x24 of padding. -->
+        <svg class="btn-apple" viewBox="5.2 2.6 14.5 18.3" aria-hidden="true">
+          <path d="M17.05 12.54c-.02-2.14 1.75-3.17 1.83-3.22-1-1.46-2.55-1.66-3.1-1.68-1.32-.13-2.58.77-3.25.77-.68 0-1.71-.75-2.81-.73-1.45.02-2.78.84-3.52 2.13-1.5 2.6-.38 6.45 1.08 8.56.72 1.03 1.57 2.18 2.69 2.14 1.08-.04 1.49-.7 2.79-.7 1.3 0 1.67.7 2.8.68 1.16-.02 1.9-1.05 2.61-2.09.82-1.19 1.16-2.34 1.18-2.4-.03-.01-2.26-.87-2.28-3.45z" />
+          <path d="M15.16 5.6c.59-.72.99-1.72.88-2.72-.86.03-1.9.57-2.51 1.29-.55.63-1.02 1.65-.89 2.62.96.08 1.93-.48 2.52-1.19z" />
+        </svg>
+        Download for macOS
+      </a>
+      <a class="btn btn-ghost" href="#how">See it work</a>
+    </div>
+
+    <!-- The island, animating through its real states, into a different app each
+         pass. This is the product's UI, not a stock illustration. Scene markup
+         lives in js/site.js so the six apps stay next to their copy. -->
+    <div class="stage reveal" aria-hidden="true">
+      <!-- The stream, running behind the window. Loose grey speech goes in the
+           left side, the set black ribbon comes out the right: the app window
+           itself is the aperture, so there is no separate pill to explain.
+
+           Fixed 1900px wide against a 1900-unit viewBox, so one unit is one
+           pixel. The middle of the path is flat, so both cut edges are vertical.
+
+           The cuts are at 880 and 1020, and they are constants rather than
+           measured, because the window is always centred and never wider than
+           940px, so it spans at least 783 to 1117 at any viewport. Anything cut
+           between those is behind the window at every width. Deriving them from
+           a measured rect needed an observer, and a stale or missed measurement
+           put the cut *outside* the window, which is what showed the ribbon's
+           blunt start in the first place. -->
+      <svg class="stream-svg" viewBox="0 0 1900 300">
+        <defs>
+          <path id="stream-path" d="M -120 62 C 250 62 340 150 440 150 L 1460 150 C 1620 150 1760 62 2020 62" />
+          <clipPath id="stream-before"><rect x="-600" y="-80" width="1480" height="460" /></clipPath>
+          <clipPath id="stream-after"><rect x="1020" y="-80" width="1580" height="460" /></clipPath>
+        </defs>
+
+        <use href="#stream-path" class="stream-ribbon" clip-path="url(#stream-after)" />
+
+        <!-- dy belongs on <text>, not on <textPath>: on the textPath it is
+             ignored, which left the baseline sitting on the path and the type
+             riding high in the ribbon. Here it offsets perpendicular to the
+             curve, so the cap band straddles the path the whole way along. -->
+        <text class="stream-raw" clip-path="url(#stream-before)" dy="0.34em">
+          <textPath id="stream-raw-tp" href="#stream-path"></textPath>
+        </text>
+        <text class="stream-clean" clip-path="url(#stream-after)" dy="0.34em">
+          <textPath id="stream-clean-tp" href="#stream-path"></textPath>
+        </text>
+      </svg>
+
+      <div class="fake-window" id="scene"></div>
+      <div class="island" id="island">
+        <svg class="island-mark" viewBox="0 0 34 20" aria-hidden="true">
+          <rect x="0"  y="7.2" width="4" height="5.6" rx="2" />
+          <rect x="7.5" y="4.2" width="4" height="11.6" rx="2" />
+          <rect x="15" y="0"   width="4" height="20"   rx="2" />
+          <rect x="22.5" y="4.2" width="4" height="11.6" rx="2" />
+          <rect x="30" y="7.2" width="4" height="5.6" rx="2" />
+        </svg>
+        <canvas id="wave" width="240" height="40"></canvas>
+        <span class="island-label" id="island-label">hold ⌥</span>
+      </div>
+    </div>
+
+    <div class="scene-tabs reveal" id="scene-tabs" role="group" aria-label="Preview Sono in a different app"></div>
+  </section>
+
+  <!-- ─────────────────────────────── the differentiator -->
+  <section class="section" id="how">
+    <p class="kicker reveal">What makes it different</p>
+    <h2 class="reveal">Most dictation types what you said.<br /><em>Sono types what you meant.</em></h2>
+    <p class="section-lede reveal">
+      People do not speak in clean sentences. They stumble, double back, and
+      change their mind halfway through. Sono reads past all of that on device,
+      and writes down the version you meant.
+    </p>
+
+    <!-- A listening pass, not a before/after table.
+         Speech is sound over time, so this is built on a timeline: a real
+         waveform with a playhead, and one transcript that Sono cleans up as the
+         head sweeps across it. The whole spoken sentence is present from the
+         start (nothing streams in, because nothing streams in the app either);
+         what moves is the read position. Words behind the head are resolved,
+         words ahead of it are still raw. Junk gets struck and lifted out as the
+         head reaches it, so the correction is tied to a position in the audio
+         rather than to a decorative timer.
+         Built by js/site.js from UTTERANCES; markup here is just the shell. -->
+    <div class="heard reveal">
+      <div class="heard-head">
+        <p class="heard-fix"><span class="heard-rec"></span><span id="heard-fix">Listening</span></p>
+        <p class="heard-clock"><span id="heard-elapsed">0:00</span></p>
+      </div>
+
+      <div class="heard-wave" id="heard-wave" aria-hidden="true">
+        <span class="heard-playhead" id="heard-playhead"></span>
+      </div>
+
+      <p class="heard-script" id="heard-script"></p>
+
+      <div class="heard-steps" id="heard-steps" role="group" aria-label="Choose an example"></div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────── the engine
+       Apple Intelligence was named only in passing, inside a privacy card and an
+       FAQ answer, while the section above demonstrates what it does without ever
+       saying what does it. This gives it a name and a switch. -->
+  <section class="section" id="engine">
+    <p class="kicker reveal">The engine</p>
+    <h2 class="reveal">Two models, both on your Mac.<br /><em>Apple Intelligence does the editing.</em></h2>
+    <p class="section-lede reveal">
+      Speech becomes text with NVIDIA Parakeet. Then Apple Intelligence, the model
+      already built into macOS, reads that text and writes down what you meant.
+      Neither one sends a word anywhere.
+    </p>
+
+    <div class="engine-row reveal">
+      <article class="engine-step">
+        <p class="engine-num">01</p>
+        <h3>Parakeet hears you</h3>
+        <p>
+          NVIDIA Parakeet TDT 0.6B v3, among the strongest open speech models for
+          English, running locally through sherpa-onnx. It downloads once and then
+          works with your wifi off.
+        </p>
+      </article>
+      <article class="engine-step">
+        <p class="engine-num">02</p>
+        <h3>Apple Intelligence edits you</h3>
+        <p>
+          The same on-device foundation model macOS ships with. It strips fillers,
+          resolves the sentence you corrected mid-flow, fixes the grammar you
+          spoke past, and turns things you counted out loud into a real list.
+        </p>
+      </article>
+    </div>
+
+    <p class="engine-note reveal">
+      <strong>Enhancement starts switched off.</strong> Raw transcription is
+      instant, and the editing pass adds a moment, so the first run is as fast as
+      it can be. Turn it on in Settings the moment you want the version you meant
+      instead of the version you said. It costs nothing and it needs no account,
+      because it is already on your Mac.
+    </p>
+  </section>
+
+  <!-- ─────────────────────────────── privacy -->
+  <section class="section band" id="privacy">
+    <div class="band-inner">
+    <p class="kicker reveal">Privacy</p>
+    <!-- Not "we do not listen to you": that reads as "your feedback is unwelcome"
+         to anyone who has not worked out yet that the subject is audio. Capability
+         is also a stronger claim than intent, and it sets up the lede below. -->
+    <h2 class="reveal big-claim">We could not listen<br />if we wanted to.</h2>
+    <p class="section-lede reveal">
+      Not a policy. An architecture. There is no server to send your voice to,
+      no account to make, and no analytics in the app.
+    </p>
+    <ul class="facts">
+      <li class="reveal">
+        <h3>Your voice never leaves</h3>
+        <p>Recording, transcription and clean up all happen on your Mac, using
+           NVIDIA Parakeet and Apple Intelligence. Turn off your wifi and Sono
+           still works.</p>
+      </li>
+      <li class="reveal">
+        <h3>No account, ever</h3>
+        <p>No email, no password, no profile, and nothing to activate. You
+           download the app and use it. That is the whole relationship.</p>
+      </li>
+      <li class="reveal">
+        <h3>Your history is a file</h3>
+        <p>Plain text on your disk that you can read, move or delete. Put it in
+           iCloud Drive if you want it on two Macs. We never see it.</p>
+      </li>
+      <li class="reveal">
+        <h3>Uninstalls completely</h3>
+        <p>One button removes the model, the history and every preference. Most
+           Mac apps leave hundreds of megabytes behind. Sono does not.</p>
+      </li>
+    </ul>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────── sneak peek -->
+  <section class="section" id="peek">
+    <p class="kicker reveal">A look inside</p>
+    <h2 class="reveal">It keeps score, quietly.</h2>
+    <p class="section-lede reveal">
+      Every dictation is logged locally, so Sono can tell you how much typing you
+      have skipped. Six accent themes, light and dark.
+    </p>
+    <figure class="shot reveal">
+      <img src="img/dashboard.png" alt="Sono's dashboard showing time saved, words dictated and a chart of words per day" width="1200" height="700" loading="lazy" />
+    </figure>
+  </section>
+
+  <!-- ─────────────────────────────── features -->
+  <section class="section" id="features">
+    <div class="grid">
+      <article class="card reveal"><h3>Works in every app</h3><p>Mail, Slack, Xcode, a terminal, a browser field. If you can type there, you can talk there.</p></article>
+      <article class="card reveal"><h3>Tap or hold</h3><p>Tap ⌥ for hands free dictation. Hold it for push to talk when you only need a line.</p></article>
+      <article class="card reveal"><h3>Self corrections</h3><p>"Tuesday, no not Tuesday, Thursday" comes out as Thursday. Only the version you meant.</p></article>
+      <article class="card reveal"><h3>Real lists</h3><p>Count things out loud and they arrive as a numbered list, not a run on sentence.</p></article>
+      <article class="card reveal"><h3>Fillers gone</h3><p>The ums and uhs and stutters never make it to the page.</p></article>
+      <article class="card reveal"><h3>Yours to keep</h3><p>Free, with no account and no expiry. Install it on every Mac you own.</p></article>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────── download
+       Was the pricing section. Keeps id="download" so the section is still
+       linkable; the buttons themselves now hit the DMG in R2 directly. -->
+  <section class="section" id="download">
+    <p class="kicker reveal">Get it</p>
+    <h2 class="reveal">It is free.<br /><em>No account, no licence, no trial.</em></h2>
+    <p class="section-lede reveal">
+      Sono costs you nothing because it costs us nothing to run. There is no
+      server, no account and no analytics in the app, so there is nothing to
+      bill for and nobody to bill. Download it and it is yours.
+    </p>
+    <div class="get reveal">
+      <a class="btn btn-solid" href="/releases/Sono-1.0.dmg" download>
+        <svg class="btn-apple" viewBox="5.2 2.6 14.5 18.3" aria-hidden="true">
+          <path d="M17.05 12.54c-.02-2.14 1.75-3.17 1.83-3.22-1-1.46-2.55-1.66-3.1-1.68-1.32-.13-2.58.77-3.25.77-.68 0-1.71-.75-2.81-.73-1.45.02-2.78.84-3.52 2.13-1.5 2.6-.38 6.45 1.08 8.56.72 1.03 1.57 2.18 2.69 2.14 1.08-.04 1.49-.7 2.79-.7 1.3 0 1.67.7 2.8.68 1.16-.02 1.9-1.05 2.61-2.09.82-1.19 1.16-2.34 1.18-2.4-.03-.01-2.26-.87-2.28-3.45z" />
+          <path d="M15.16 5.6c.59-.72.99-1.72.88-2.72-.86.03-1.9.57-2.51 1.29-.55.63-1.02 1.65-.89 2.62.96.08 1.93-.48 2.52-1.19z" />
+        </svg>
+        Download for macOS
+      </a>
+      <p class="get-note">
+        macOS 26 or later, Apple silicon. 26 MB app, plus a one time 456 MB
+        speech model it fetches on first launch.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────── faq -->
+  <section class="section" id="faq">
+    <p class="kicker reveal">Questions</p>
+    <div class="faq reveal">
+      <details><summary>Does it really work offline?</summary><p>Yes. Sono downloads its speech model once, then transcribes with no network at all. It reaches the internet for exactly one thing: a daily look for a new version, which you can turn off, and which carries nothing about your text.</p></details>
+      <details><summary>How accurate is it?</summary><p>It runs NVIDIA Parakeet TDT 0.6B v3, currently among the strongest open speech models for English, then Apple Intelligence tidies the result. Accuracy is comparable to the cloud services, without the cloud.</p></details>
+      <details><summary>Why is it not on the Mac App Store?</summary><p>Pasting into other apps needs Accessibility access, which App Store rules do not permit. Sono is signed and notarised by Apple, so macOS trusts it, and it updates itself.</p></details>
+      <details><summary>What does it cost?</summary><p>Nothing. There is no paid tier, no trial limit and no account. Sono runs entirely on your Mac, so it costs us nothing to run and there is nothing for us to charge you for.</p></details>
+      <details><summary>Do you store my transcripts?</summary><p>We cannot. They are a file on your disk. There is no server, no bucket and no database on our side.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="foot-brand">
+    <svg class="mark" viewBox="0 0 34 20" aria-hidden="true">
+      <rect x="0"  y="7.2" width="4" height="5.6" rx="2" />
+      <rect x="7.5" y="4.2" width="4" height="11.6" rx="2" />
+      <rect x="15" y="0"   width="4" height="20"   rx="2" />
+      <rect x="22.5" y="4.2" width="4" height="11.6" rx="2" />
+      <rect x="30" y="7.2" width="4" height="5.6" rx="2" />
+    </svg>
+    <span class="wordmark">Sono</span>
+  </div>
+  <p class="foot-line">Made for people who think out loud.</p>
+  <p class="foot-meta">
+    <a href="mailto:support@heysono.app">support@heysono.app</a>
+    <span aria-hidden="true">·</span>
+    <a href="#privacy">Privacy</a>
+    <span aria-hidden="true">·</span>
+    <span>Aeyar Studio</span>
+  </p>
+</footer>
+
+<script src="js/site.js"></script>
+</body>
+</html>

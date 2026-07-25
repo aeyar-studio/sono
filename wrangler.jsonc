@@ -1,0 +1,44 @@
+{
+  // Sono's landing page, served from Cloudflare Workers static assets.
+  //
+  // No `main`: this is a purely static site, so there is no Worker script and
+  // every request is answered from the asset store at the edge.
+  //
+  // The DMG and appcast.xml are deliberately NOT in Web/. They are release
+  // artefacts that change on their own schedule, and putting them here would
+  // mean redeploying the whole site to ship a build.
+  "name": "sono",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-07-24",
+  "assets": {
+    "directory": "./Web",
+    // Named so the Worker can hand anything that is not a release artefact
+    // straight back to the static asset store.
+    "binding": "ASSETS",
+    // Deliberately NOT single-page-application. That returns index.html with a
+    // 200 for any unknown path, which would mean a missing /releases/Sono-1.0.dmg
+    // hands Sparkle a page of HTML and a success code instead of a 404, and
+    // every typo becomes a soft 404 for search engines. A missing file should
+    // say so.
+    "not_found_handling": "none"
+  },
+  // The apex and www both point at this Worker. `custom_domain` means Cloudflare
+  // provisions and owns the DNS record for each, which is why the Namecheap
+  // parking A/CNAME had to be deleted first: it cannot create a record over one
+  // that already exists.
+  "routes": [
+    { "pattern": "heysono.app", "custom_domain": true },
+    { "pattern": "www.heysono.app", "custom_domain": true }
+  ],
+  // Explicit, because adding `routes` flips workers.dev off by default and that
+  // took the site down last time the bind failed. Keeps a fallback URL alive.
+  "workers_dev": true,
+  // The DMG and the appcast live here rather than in Web/, so shipping a build
+  // is two object uploads instead of a full site redeploy.
+  "r2_buckets": [
+    { "binding": "RELEASES", "bucket_name": "sono-releases" }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

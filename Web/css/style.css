@@ -1,0 +1,836 @@
+/* ───────────────────────────────────────────── fonts
+   Self hosted on purpose. A page whose headline is "we do not listen to you"
+   should not hand every visitor's IP to a font CDN. */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans.ttf') format('truetype-variations');
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces';
+  src: url('../fonts/Fraunces.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+/* ───────────────────────────────────────────── tokens */
+:root {
+  --cream: #faf8f3;
+  --panel: #fffefb;
+  --sand: #f2efe6;
+  --border: #e8e3d7;
+  --border-soft: #f0ede4;
+
+  --ink: #27251f;
+  --ink-2: #6b675c;
+  --ink-3: #9c978b;
+
+  --accent: #8b6db0;
+  --accent-deep: #6f5490;
+  --wash: rgba(139, 109, 176, 0.10);
+  --tint: rgba(139, 109, 176, 0.18);
+
+  --pill: #12111b;
+  --radius: 14px;
+  --measure: 640px;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Paper tooth. 2% noise stops the cream reading as flat digital fill. */
+.grain {
+  position: fixed;
+  inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0.028;
+  pointer-events: none;
+  z-index: 100;
+  mix-blend-mode: multiply;
+}
+
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.12; margin: 0; }
+p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+em { font-style: normal; color: var(--accent); }
+
+/* ───────────────────────────────────────────── nav */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px clamp(20px, 5vw, 56px);
+  background: rgba(250, 248, 243, 0.82);
+  backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s var(--ease);
+}
+.nav.stuck { border-bottom-color: var(--border); }
+
+.brand { display: inline-flex; align-items: center; gap: 10px; }
+.mark { width: 30px; height: 18px; fill: var(--ink); }
+.wordmark {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; font-size: 22px; letter-spacing: -0.01em;
+}
+
+.nav-links { display: flex; align-items: center; gap: clamp(14px, 2vw, 30px); }
+/* :not(.btn) matters. A descendant selector outranks .btn-solid, so without it
+   the Download button's label went grey on near-black. */
+.nav-links a:not(.btn) { font-size: 14px; color: var(--ink-2); transition: color 0.2s; }
+.nav-links a:not(.btn):hover { color: var(--ink); }
+
+/* ───────────────────────────────────────────── buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 22px;
+  border-radius: 11px;
+  font-size: 14.5px; font-weight: 600;
+  transition: transform 0.18s var(--ease), background 0.2s, box-shadow 0.25s;
+  will-change: transform;
+}
+.btn-solid {
+  background: var(--ink); color: var(--cream);
+  box-shadow: 0 1px 2px rgba(39, 37, 31, 0.16), 0 8px 22px -12px rgba(39, 37, 31, 0.5);
+}
+.btn-solid:hover { transform: translateY(-2px); background: #1b1a15; }
+.btn-ghost { color: var(--ink); border: 1px solid var(--border); background: var(--panel); }
+.btn-ghost:hover { transform: translateY(-2px); border-color: var(--ink-3); }
+.btn-sm { padding: 9px 16px; font-size: 13.5px; border-radius: 9px; }
+.btn-block { width: 100%; }
+/* currentColor, so it inverts with the button rather than being pinned white.
+   The leaf makes the mark read low against cap height, hence the 1px lift. */
+.btn-apple { height: 16px; width: 12.7px; fill: currentColor; flex: none; margin-top: -1px; }
+
+/* ───────────────────────────────────────────── hero */
+/* Tighter than it was: the stream band now sits above and carries the top space. */
+.hero {
+  position: relative;
+  padding: clamp(20px, 4vh, 46px) clamp(20px, 5vw, 56px) 0;
+  max-width: 1180px; margin: 0 auto;
+  text-align: center;
+}
+/* One slow lavender bloom. Follows the pointer a little, never announces itself. */
+.hero-glow {
+  position: absolute; left: 50%; top: 4%;
+  width: min(760px, 90vw); aspect-ratio: 1;
+  transform: translate(-50%, 0);
+  background: radial-gradient(circle, rgba(139, 109, 176, 0.20), transparent 62%);
+  filter: blur(30px);
+  pointer-events: none;
+  transition: transform 1.6s var(--ease);
+}
+
+.eyebrow {
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(40px, 6.4vw, 78px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.hero h1 .line { display: block; }
+.accent-text { color: var(--accent); }
+
+.lede {
+  max-width: var(--measure); margin: 24px auto 0;
+  font-size: clamp(16px, 1.5vw, 18.5px);
+  color: var(--ink-2);
+}
+.cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
+
+/* ───────────────────────────────────────────── the island demo */
+.stage {
+  position: relative;
+  margin: clamp(52px, 8vw, 92px) auto 0;
+  max-width: 940px;
+}
+/* Positioned and stacked above the stream, and opaque, so it hides the cut
+   edges where the grey text stops and the ribbon starts. */
+.fake-window {
+  position: relative; z-index: 1;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(39, 37, 31, 0.05), 0 40px 80px -50px rgba(39, 37, 31, 0.42);
+  overflow: hidden;
+  text-align: left;
+}
+.fake-bar {
+  display: flex; gap: 7px; align-items: center;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--sand);
+}
+.fake-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+.win-title {
+  margin-left: 10px; font-size: 12px; font-weight: 600;
+  color: var(--ink-3); letter-spacing: 0.01em;
+}
+/* Fixed height across all six scenes. Without it the island, which hangs off the
+   window's bottom edge, jumps every time a taller app mounts. Sized to the
+   longest scene at the narrowest width this rule covers (Slack, ~219px at 721px),
+   because a scene that overflows silently loses the end of its sentence. Slack
+   sets the floor: its sidebar, feed and composer need this much room. */
+.sc { height: 412px; padding: 22px 24px; overflow: hidden; }
+.typed { font-size: 16.5px; line-height: 1.65; color: var(--ink); margin: 0; }
+.typed-pre { white-space: pre-wrap; }
+/* The paste is instantaneous, like the app's. This only stops it from blinking
+   in below the reader's notice. */
+@keyframes land { from { opacity: 0; } to { opacity: 1; } }
+.typed.landed { animation: land 0.18s var(--ease); }
+/* A pseudo-element, not a sibling span: .typed is a block, so a real element
+   after it would sit on the next line instead of trailing the text. */
+.typed::after {
+  content: ''; display: inline-block; width: 2px; height: 1.05em;
+  background: var(--accent); margin-left: 2px;
+  transform: translateY(2px);
+  animation: blink 1.05s steps(2, start) infinite;
+}
+@keyframes blink { to { opacity: 0; } }
+
+/* ── the six scenes. Recognisable by chrome and wording, no logos. */
+.sc p { margin: 0; }
+
+/* ── Slack. Its own aubergine chrome, three columns, and the composer at the
+   bottom where the dictation lands. Traffic lights live in the purple bar, so
+   this scene is `bare` and draws its own. */
+.sc-slack {
+  --sk-aubergine: #3f0e40;
+  --sk-rail: #350d36;
+  padding: 0; display: flex; flex-direction: column;
+  font-size: 12px;
+}
+.sk-dots { display: flex; gap: 6px; flex: none; }
+.sk-dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+.sk-dots i:nth-child(1) { background: #ff5f57; }
+.sk-dots i:nth-child(2) { background: #febc2e; }
+.sk-dots i:nth-child(3) { background: #28c840; }
+.sk-top {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--sk-aubergine); padding: 9px 14px; flex: none;
+}
+.sk-arrows { color: rgba(255, 255, 255, 0.6); font-size: 14px; letter-spacing: 3px; }
+.sk-search {
+  flex: 1; max-width: 340px; margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 7px;
+  padding: 4px 12px; font-size: 11.5px; color: rgba(255, 255, 255, 0.72);
+}
+.sk-cols { display: flex; flex: 1; min-height: 0; }
+.sk-rail {
+  width: 58px; flex: none; background: var(--sk-rail);
+  padding: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.sk-ws {
+  width: 26px; height: 26px; border-radius: 7px; margin-bottom: 4px;
+  background: #4bbfa5; color: #0f3f36;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+}
+.sk-r {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 9.5px; color: rgba(255, 255, 255, 0.66);
+}
+/* currentColor, so the active item lights up icon and label together. */
+.sk-r svg { width: 16px; height: 16px; fill: currentColor; display: block; }
+.sk-r.on { color: #fff; }
+.sk-side {
+  width: 168px; flex: none; background: var(--sk-aubergine);
+  padding: 8px 0 0; overflow: hidden;
+}
+.sk-side p { padding: 3px 14px; color: rgba(255, 255, 255, 0.72); }
+.sk-name { font-size: 14px; font-weight: 700; color: #fff !important; padding-bottom: 8px !important; }
+.sk-g {
+  font-size: 10.5px; color: rgba(255, 255, 255, 0.5) !important;
+  margin-top: 8px !important;
+}
+.sk-i { display: flex; align-items: center; gap: 7px; border-radius: 5px; margin: 0 6px; }
+.sk-i.on { background: #1164a3; color: #fff !important; font-weight: 600; }
+.sk-b {
+  margin-left: auto; background: #fff; color: var(--sk-aubergine);
+  font-size: 9.5px; font-weight: 700; border-radius: 999px; padding: 0 5px;
+}
+/* Drawn avatars, three sizes: message, sidebar, member cluster. */
+.av { width: 30px; height: 30px; flex: none; display: block; }
+.av.sm { width: 15px; height: 15px; }
+.av.xs { width: 17px; height: 17px; }
+.sk-main { flex: 1; min-width: 0; background: #fff; display: flex; flex-direction: column; }
+.sk-head {
+  padding: 10px 16px; border-bottom: 1px solid #e6e4e6; flex: none;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.sk-mem {
+  display: flex; align-items: center; flex: none;
+  border: 1px solid #ddd; border-radius: 7px; padding: 2px 7px 2px 4px; background: #f8f8f8;
+}
+.sk-mem .av { margin-right: -5px; border: 1.5px solid #fff; border-radius: 5px; }
+.sk-mem b { margin-left: 10px; font-size: 10.5px; color: #1d1c1d; }
+/* The app shortcut row. Recognisable by name and dot, no borrowed marks. */
+.sk-apps {
+  display: flex; gap: 16px; padding: 7px 16px !important;
+  border-bottom: 1px solid #f0eff0; flex: none;
+}
+.sk-apps span { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #1d1c1d; }
+.sk-apps svg { width: 13px; height: 13px; display: block; flex: none; }
+.sk-ch { font-size: 13.5px; font-weight: 700; color: #1d1c1d; }
+.sk-ch span { color: #616061; font-weight: 400; }
+.sk-desc { font-size: 11px; color: #616061; margin-top: 2px !important; }
+.sk-feed { flex: 1; padding: 12px 16px; overflow: hidden; }
+.sk-msg { display: flex; gap: 9px; margin-bottom: 12px; }
+.sk-who { font-size: 12.5px; font-weight: 700; color: #1d1c1d; }
+.sk-who span { font-weight: 400; color: #616061; font-size: 10.5px; margin-left: 6px; }
+.sk-txt { font-size: 12.5px; color: #1d1c1d; line-height: 1.5; }
+.sk-react { display: flex; align-items: center; gap: 6px; margin-top: 5px !important; }
+.sk-react span {
+  border: 1px solid #dddddd; border-radius: 999px;
+  padding: 1px 7px; font-size: 10px; color: #1264a3; background: #f8f8f8;
+}
+.sk-react em { font-size: 10.5px; color: #1264a3; font-style: normal; font-weight: 600; }
+.sk-box {
+  margin: 0 16px 12px; border: 1px solid #c9c8c9; border-radius: 8px;
+  flex: none; background: #fff;
+}
+.sk-tools, .sk-foot {
+  display: flex; align-items: center; gap: 13px;
+  padding: 6px 10px !important; color: #616061; font-size: 11.5px;
+}
+.sk-tools { border-bottom: 1px solid #ededed; }
+.sk-tools b, .sk-tools i, .sk-tools s, .sk-tools u { font-size: 11.5px; }
+.sk-foot em { margin-left: auto; color: #b9b9b9; font-style: normal; }
+.sc-slack .typed { font-size: 12.5px; color: #1d1c1d; padding: 9px 11px; min-height: 34px; }
+.sc-slack .typed::after { background: #1264a3; }
+
+/* ── Claude Code. A terminal is dark even on a cream page; anything else reads
+   as a fake. The mark is a pixel glyph in Anthropic's clay, not a traced logo. */
+/* No negative margin to hide the window border: height would then have to be
+   calc(100% + 2px), which resolves against a content-sized parent and collapses.
+   The 1px cream border reads as the window edge anyway. */
+.sc-term {
+  background: #141414; padding: 14px 18px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px; line-height: 1.65; color: #e6e4e1;
+  display: flex; flex-direction: column;
+}
+/* The prompt sits at the bottom of a terminal, with the scrollback above it. */
+.tm-input { margin-top: auto; }
+.tm-dots { margin-bottom: 12px; }
+.tm-dots i { opacity: 0.55; }
+.tm-hero { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.tm-logo { width: 34px; flex: none; fill: #d97757; margin-top: 2px; }
+.tm-name { font-weight: 700; color: #f5f3f1; }
+.tm-name span { font-weight: 400; color: #8a8681; }
+.tm-meta { color: #8a8681; }
+/* Claude Code tints the submitted turn. Same idea, same restraint. */
+.tm-you {
+  background: #2b2b2b; color: #f5f3f1;
+  margin: 0 -18px 12px !important; padding: 2px 18px !important;
+}
+/* Hanging indent, not flex. Flex would make every inline child its own item and
+   insert the gap before punctuation, giving "Read (…)" and "…swift , in the". */
+.tm-b { padding-left: 20px; text-indent: -20px; margin-bottom: 8px !important; }
+.tm-b em { font-style: normal; color: #8a8681; margin-right: 8px; }
+.tm-b em.ok { color: #4ea373; }
+.tm-b b { color: #f5f3f1; }
+.tm-path { color: #6fa8dc; }
+.tm-sub { color: #8a8681; padding-left: 20px; margin-bottom: 14px !important; }
+.tm-input {
+  border-top: 1px solid #2f2f2f; border-bottom: 1px solid #2f2f2f;
+  margin-left: -18px; margin-right: -18px; padding: 9px 18px;
+  display: flex; gap: 8px;
+}
+.tm-gt { color: #8a8681; flex: none; }
+.sc-term .typed { min-width: 0; }
+.sc-term .typed { font: inherit; color: #f5f3f1; }
+/* A block cursor, not a hairline: that is what a terminal shows. */
+.sc-term .typed::after {
+  width: 7px; height: 1.05em; background: #e6e4e1; margin-left: 1px;
+}
+.tm-hint { color: #6f6c68; padding-top: 8px; }
+
+.sc-code { padding: 0; display: flex; font-size: 13.5px; }
+.vs-side {
+  width: 176px; flex: none; background: var(--sand);
+  border-right: 1px solid var(--border); padding-bottom: 8px;
+}
+.vs-side p { padding: 2px 14px; font-size: 11.5px; color: var(--ink-2); }
+.vs-dots { padding: 11px 14px 12px !important; }
+.vs-h { font-size: 10px !important; letter-spacing: 0.08em; color: var(--ink-3) !important; }
+.vs-f { white-space: nowrap; }
+.vs-f.in1 { padding-left: 24px !important; }
+.vs-f.in2 { padding-left: 38px !important; }
+.vs-f.on { background: var(--tint); color: var(--accent-deep) !important; font-weight: 600; }
+.vs-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sc-code .vs-tabs { display: flex; gap: 2px; }
+.sc-code .vs-tabs span {
+  padding: 11px 16px; font-size: 12px; color: var(--ink-3);
+  border-bottom: 1px solid var(--border-soft);
+}
+.sc-code .vs-tabs .on {
+  color: var(--ink); background: var(--panel);
+  border-bottom: 2px solid var(--accent);
+}
+.sc-code .vs-rows {
+  flex: 1; padding: 12px 0 0 18px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px; line-height: 1.85;
+}
+.sc-code .vs-rows p { display: flex; gap: 16px; }
+.sc-code .vs-rows i { color: var(--ink-3); font-style: normal; min-width: 18px; text-align: right; }
+.vs-status {
+  display: flex; gap: 18px; flex: none;
+  border-top: 1px solid var(--border-soft); background: var(--sand);
+  padding: 5px 16px !important; font-size: 10.5px; color: var(--ink-2);
+}
+.sc-code .cm { color: #6c8f6a; }
+.sc-code .kw { color: var(--accent-deep); }
+.sc-code .fn { color: #2f6f9e; }
+.sc-code .pm { color: var(--ink-2); }
+.sc-code .dimmed { color: var(--ink-3); }
+.sc-code .typed { font: inherit; color: #6c8f6a; }
+
+.sc-mail { display: flex; flex-direction: column; }
+.sc-mail .ml-tools {
+  display: flex; gap: 20px; font-size: 13px; color: var(--ink-3);
+  padding-bottom: 12px !important; border-bottom: 1px solid var(--border-soft);
+}
+.sc-mail .ml-f {
+  font-size: 13.5px; color: var(--ink);
+  padding: 9px 0; border-bottom: 1px solid var(--border-soft);
+}
+.sc-mail .ml-f span { color: var(--ink-3); display: inline-block; width: 62px; }
+.sc-mail .ml-body { padding-top: 16px; flex: 1; display: flex; flex-direction: column; }
+.sc-mail .typed { font-size: 15px; }
+.sc-mail .ml-sig {
+  margin-top: auto !important; padding-top: 16px;
+  font-size: 13.5px; color: var(--ink-3); line-height: 1.5;
+}
+
+.sc-web { padding: 14px 0 0; }
+.sc-web .br-url {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 18px 18px !important;
+  background: var(--sand); border-radius: 999px;
+  padding: 8px 14px; font-size: 12.5px; color: var(--ink-2);
+}
+.sc-web .br-lock {
+  width: 8px; height: 10px; border-radius: 2px; flex: none;
+  border: 1.5px solid var(--ink-3);
+}
+.sc-web { display: flex; flex-direction: column; }
+.sc-web .br-page { padding: 0 24px; flex: 1; display: flex; flex-direction: column; }
+.sc-web .gh-repo { font-size: 13.5px; color: var(--ink-2); }
+.sc-web .gh-repo b { color: var(--ink); }
+.sc-web .gh-nav {
+  display: flex; gap: 18px; margin-top: 10px !important;
+  border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--ink-2);
+}
+.sc-web .gh-nav span { padding-bottom: 8px; }
+.sc-web .gh-nav .on {
+  color: var(--ink); font-weight: 600;
+  box-shadow: inset 0 -2px 0 #d97757;
+}
+.sc-web .gh-lab {
+  font-size: 12px; font-weight: 600; color: var(--ink-2);
+  margin: 14px 0 5px !important;
+}
+.sc-web .gh-title {
+  font-size: 14px; border: 1px solid var(--border); border-radius: 7px;
+  padding: 8px 11px; background: var(--panel);
+}
+.sc-web .gh-box {
+  border: 1px solid var(--border); border-radius: 7px;
+  background: var(--panel); overflow: hidden;
+}
+.sc-web .gh-tools {
+  display: flex; gap: 14px; align-items: center;
+  background: var(--sand); border-bottom: 1px solid var(--border);
+  padding: 6px 11px !important; font-size: 11.5px; color: var(--ink-2);
+}
+.sc-web .typed { font-size: 14px; padding: 10px 11px; }
+.sc-web .gh-submit { margin-top: auto !important; padding: 12px 0 !important; text-align: right; }
+.sc-web .gh-submit span {
+  background: #1f883d; color: #fff; border-radius: 6px;
+  padding: 6px 14px; font-size: 12.5px; font-weight: 600;
+}
+
+/* ── app picker. Reads as a caption, works as a control. */
+.scene-tabs {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 7px;
+  margin: 52px auto 0; max-width: 620px;
+}
+.scene-tab {
+  border: 1px solid transparent; background: none; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-3);
+  padding: 6px 13px; border-radius: 999px;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.scene-tab:hover { color: var(--ink); background: var(--sand); }
+.scene-tab.on {
+  color: var(--accent-deep); background: var(--wash); border-color: var(--tint);
+}
+.scene-more {
+  align-self: center; padding: 6px 4px;
+  font-size: 12.5px; color: var(--ink-3); font-style: italic;
+}
+
+/* The pill. Same geometry as the app: dark, capsule, grows with state. */
+.island {
+  position: absolute; left: 50%; bottom: -26px; z-index: 2;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 9px;
+  height: 44px; padding: 0 18px;
+  border-radius: 999px;
+  background: var(--pill);
+  border: 0.8px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 10px 30px -10px rgba(18, 17, 27, 0.6);
+  transition: width 0.45s var(--ease), background 0.4s;
+  width: 168px;
+}
+.island.listening { width: 268px; }
+.island.thinking  { width: 200px; }
+.island.done      { width: 208px; }
+.island-mark { width: 26px; height: 16px; fill: #faf9f7; flex: none; }
+#wave { width: 150px; height: 26px; display: none; }
+.island.listening #wave { display: block; }
+.island-label {
+  font-size: 12.5px; font-weight: 600; color: rgba(250, 249, 247, 0.9);
+  white-space: nowrap;
+}
+.island.listening .island-label { display: none; }
+
+/* ───────────────────────────────────────────── the stream
+   Full bleed, and it crops rather than squashes: `slice` keeps the type at a
+   constant size and lets the ribbon run off both edges, which is the point. */
+/* Wider than the stage on purpose, and centred on it, so the ribbon runs out
+   past the window and off both edges of the page. body has overflow-x: hidden,
+   so the excess is clipped instead of scrolling. */
+.stream-svg {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1900px; height: 300px;
+  z-index: 0; pointer-events: none;
+}
+.stream-ribbon { fill: none; stroke: var(--ink); stroke-width: 52; }
+/* No dominant-baseline here. It computes as `middle` but is ignored for glyphs
+   inside a textPath, which left the baseline sitting on the path and the type
+   riding high in the ribbon. The dy on each textPath does the centring instead,
+   and it is honoured everywhere. Setting both would shift the text twice. */
+.stream-raw, .stream-clean {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 27px;
+}
+.stream-raw { fill: rgba(39, 37, 31, 0.24); font-weight: 500; }
+.stream-clean { fill: var(--cream); font-weight: 600; }
+
+/* ───────────────────────────────────────────── sections */
+.section {
+  max-width: 1180px; margin: 0 auto;
+  padding: clamp(74px, 12vh, 132px) clamp(20px, 5vw, 56px) 0;
+}
+.band {
+  margin-top: clamp(74px, 12vh, 132px);
+  background: var(--sand);
+  max-width: none;
+  padding-bottom: clamp(74px, 12vh, 132px);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.band-inner { max-width: 1180px; margin: 0 auto; }
+
+.kicker {
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.11em;
+  text-transform: uppercase; color: var(--ink-3);
+  margin-bottom: 16px;
+}
+.section h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(28px, 3.6vw, 46px);
+  max-width: 780px;
+}
+.big-claim { font-size: clamp(34px, 5.4vw, 66px) !important; }
+.section-lede {
+  max-width: var(--measure); margin-top: 18px;
+  font-size: clamp(15.5px, 1.4vw, 17.5px); color: var(--ink-2);
+}
+
+/* ───────────────────────────────────────────── the listening pass
+   No card. The rest of the page is panels, so this one sits open on the cream
+   with the waveform as its only hard graphic, and the transcript set big. */
+.heard { margin-top: clamp(40px, 5vw, 64px); }
+
+.heard-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; margin-bottom: 16px;
+}
+.heard-fix {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.11em;
+  text-transform: uppercase; color: var(--accent);
+}
+/* The recording tell. Breathes while a pass is running, still when it is not. */
+.heard-rec {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--accent); opacity: 0.4;
+}
+.heard.running .heard-rec { animation: heardRec 1.5s ease-in-out infinite; }
+@keyframes heardRec {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.35); }
+}
+.heard-clock {
+  font-size: 12px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── waveform. Bars behind the head are lit, bars ahead are pale. */
+.heard-wave {
+  position: relative;
+  display: flex; align-items: center; gap: 2px;
+  height: 62px; overflow: hidden;
+}
+.heard-wave i {
+  flex: 1 1 0; min-width: 0;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.25s linear, opacity 0.25s linear;
+}
+.heard-wave i.lit { background: var(--accent); }
+.heard-wave i.spent { background: var(--tint); }
+.heard-playhead {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: 2px; border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 12px 2px rgba(139, 109, 176, 0.45);
+  opacity: 0;
+}
+.heard.running .heard-playhead { opacity: 1; }
+
+/* ── the transcript. Big, because this is the thing being read. */
+.heard-script {
+  margin: clamp(20px, 2.4vw, 30px) 0 0;
+  font-size: clamp(21px, 2.5vw, 31px); line-height: 1.45;
+  font-weight: 500; letter-spacing: -0.01em;
+  color: var(--ink-3);
+  /* min-height is set by js from the tallest raw transcript at this width. */
+}
+.heard-script .tk { transition: color 0.3s var(--ease); margin-right: 0.3em; }
+/* Behind the head: resolved, and set in ink. */
+.heard-script .tk.done { color: var(--ink); }
+
+.heard-script .tk.cut, .heard-script .tk.add {
+  display: inline-block; white-space: nowrap; position: relative;
+}
+.heard-script .tk.cut::after {
+  content: ''; position: absolute; left: -2px; right: -2px; top: 55%;
+  height: 2px; border-radius: 1px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform 0.22s linear;
+}
+.heard-script .tk.cut.struck::after { transform: scaleX(1); }
+/* Lifted out of the line rather than merely hidden: it reads as removal.
+   Collapse is font-size, not max-width, because max-width needs overflow:hidden
+   and that drops an inline-block's baseline off the line it sits on. */
+.heard-script .tk.cut.gone {
+  font-size: 0; margin-right: 0; opacity: 0;
+  transform: translateY(-0.45em);
+  transition: font-size 0.32s var(--ease), margin-right 0.32s var(--ease),
+              opacity 0.26s linear, transform 0.32s var(--ease);
+}
+.heard-script .tk.add { font-size: 0; margin-right: 0; opacity: 0; }
+.heard-script .tk.add.grown {
+  font-size: 1em; margin-right: 0.3em; opacity: 1; color: var(--ink);
+  transition: font-size 0.34s var(--ease), margin-right 0.34s var(--ease),
+              opacity 0.3s linear 0.06s;
+}
+
+/* ── the three passes. Progress bars, so there is nothing to click but also no
+   button shouting "next example". */
+.heard-steps { display: flex; gap: 10px; margin-top: clamp(22px, 2.6vw, 32px); }
+.heard-step {
+  flex: 1; border: 0; padding: 0; background: none; cursor: pointer;
+  text-align: left; font: inherit;
+}
+.heard-step-bar {
+  display: block; height: 3px; border-radius: 2px;
+  background: var(--border); overflow: hidden;
+}
+.heard-step-bar b {
+  display: block; height: 100%; width: 0;
+  background: var(--accent); border-radius: 2px;
+}
+.heard-step-label {
+  display: block; margin-top: 9px;
+  font-size: 12px; color: var(--ink-3);
+  transition: color 0.25s;
+}
+.heard-step[aria-current='true'] .heard-step-label { color: var(--ink); font-weight: 600; }
+.heard-step:hover .heard-step-label { color: var(--ink-2); }
+
+/* ───────────────────────────────────────────── the engine
+   Two numbered steps rather than cards: the order is the point, since one model
+   hands its output to the other. */
+.engine-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(18px, 2.6vw, 34px);
+  margin-top: clamp(34px, 4vw, 52px);
+}
+.engine-step {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: clamp(22px, 2.6vw, 32px);
+}
+.engine-num {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.engine-step h3 { font-size: 17px; margin-bottom: 9px; }
+.engine-step p { font-size: 14.5px; color: var(--ink-2); line-height: 1.6; }
+
+/* The honest bit: the editing pass is a switch, not a promise. Set apart so it
+   reads as a note rather than another feature claim. */
+.engine-note {
+  margin-top: clamp(20px, 2.4vw, 30px);
+  max-width: 760px;
+  padding-left: 18px;
+  border-left: 2px solid var(--tint);
+  font-size: 14.5px; line-height: 1.65; color: var(--ink-2);
+}
+.engine-note strong { color: var(--ink); font-weight: 600; }
+
+/* ───────────────────────────────────────────── facts */
+.facts {
+  list-style: none; padding: 0; margin: 48px 0 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  gap: clamp(18px, 2.4vw, 30px);
+}
+.facts h3 { font-size: 17px; margin-bottom: 8px; }
+.facts p { font-size: 14.5px; color: var(--ink-2); }
+.facts li { padding-left: 18px; border-left: 2px solid var(--tint); }
+
+/* ───────────────────────────────────────────── shot */
+.shot { margin: 46px 0 0; }
+.shot img {
+  width: 100%; height: auto; display: block;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(39, 37, 31, 0.05), 0 50px 90px -60px rgba(39, 37, 31, 0.5);
+}
+
+/* ───────────────────────────────────────────── grid */
+.grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: 16px;
+}
+.card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  transition: transform 0.24s var(--ease), border-color 0.24s;
+}
+.card:hover { transform: translateY(-3px); border-color: var(--ink-3); }
+.card h3 { font-size: 16.5px; margin-bottom: 7px; }
+.card p { font-size: 14.5px; color: var(--ink-2); }
+
+/* ───────────────────────────────────────────── get it
+   Replaced the price card. Nothing to compare and no figure to show, so it is
+   just the button and the requirements. */
+.get { margin-top: 36px; }
+.get-note {
+  margin-top: 16px; max-width: 420px;
+  font-size: 13px; color: var(--ink-3); line-height: 1.55;
+}
+
+/* ───────────────────────────────────────────── faq */
+.faq { margin-top: 40px; max-width: 800px; }
+details {
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+}
+summary {
+  cursor: pointer; font-size: 16px; font-weight: 600;
+  list-style: none; display: flex; justify-content: space-between; gap: 16px;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after {
+  content: '+'; color: var(--accent); font-weight: 400; font-size: 20px;
+  transition: transform 0.25s var(--ease);
+}
+details[open] summary::after { transform: rotate(45deg); }
+details p { margin-top: 11px; font-size: 14.5px; color: var(--ink-2); max-width: 68ch; }
+
+/* ───────────────────────────────────────────── footer */
+.foot {
+  margin-top: clamp(84px, 14vh, 150px);
+  padding: 52px clamp(20px, 5vw, 56px) 44px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.foot-brand { display: inline-flex; align-items: center; gap: 9px; }
+.foot-line {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 19px; margin-top: 14px; color: var(--ink-2);
+}
+.foot-meta { margin-top: 18px; font-size: 13px; color: var(--ink-3); display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.foot-meta a:hover { color: var(--ink); }
+
+/* ───────────────────────────────────────────── reveal on scroll */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.62s var(--ease), transform 0.62s var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
+
+@media (max-width: 720px) {
+  .nav-links a:not(.btn) { display: none; }
+  .island { width: 148px; padding: 0 14px; }
+  .island.listening { width: min(88vw, 268px); }
+  /* 40px Fraunces breaks "Nobody else hears it." with "it." alone on line 3. */
+  .hero h1 { font-size: 33px; }
+  .big-claim { font-size: 31px !important; }
+  /* Two auto-width buttons centre-align into a ragged stack. Match their edges. */
+  .cta { flex-direction: column; align-items: stretch; }
+  /* Every sentence wraps to roughly twice the lines at this width, so the desktop
+     scene height clips four of the six. Taller box, smaller code. */
+  .sc { height: 420px; padding: 18px 18px; }
+  /* GitHub is the tallest scene here: the URL and the five nav items both wrap,
+     and the description takes five lines at this width. */
+  .sc-web .br-url { white-space: nowrap; overflow: hidden; }
+  .sc-web .gh-repo, .sc-web .gh-nav span:nth-child(n+4) { display: none; }
+  .sc-web .typed { font-size: 12.5px; }
+  .sc-web .gh-title { font-size: 12.5px; }
+  .sc-term { font-size: 11px; padding: 12px 14px; }
+  .tm-you, .tm-input { margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px; }
+  /* Both apps drop their side panels at this width, same as the real ones do.
+     Kept at 375px there is no room left for the content they frame. */
+  .engine-row { grid-template-columns: 1fr; }
+  .sk-rail, .sk-side, .vs-side { display: none; }
+  .sc-code { padding: 0; }
+  .sc-code .vs-rows { font-size: 10.5px; padding-left: 10px; }
+  .sc-code .vs-rows p { gap: 10px; }
+  .sk-search { max-width: none; }
+  .sk-apps { gap: 11px; }
+  .sk-desc { display: none; }
+}
+
+/* Anyone who asks for less motion gets none of it. */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+  .reveal { opacity: 1; transform: none; }
+  .typed::after { display: none; }
+  html { scroll-behavior: auto; }
+}
