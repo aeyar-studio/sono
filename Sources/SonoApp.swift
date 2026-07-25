@@ -62,6 +62,7 @@ final class Dictation {
             island.model.phase = .flash("No speech access"); return
         }
         Injector.ensureAccessibility()   // prompts once; paste falls back to copy until granted
+        await Licensing.shared.validateIfNeeded()
 
         // The model is downloaded on first launch — a fresh install must work
         // with no manual setup. Subsequent launches skip straight past this.
@@ -130,6 +131,10 @@ final class Dictation {
         guard case .ready = island.model.phase, !busy else {
             return
         }
+        guard Licensing.shared.state.isUnlocked else {
+            flash("Trial ended — see Sono")
+            return
+        }
         do {
             island.model.resetLevels()
             Sounds.playStart()          // before the engine: it reconfigures the device
@@ -165,6 +170,7 @@ final class Dictation {
                 History.shared.add(text: text,
                                    duration: Double(samples.count) / Recorder.sampleRate,
                                    pasted: pasted)
+                Licensing.shared.recordDictation(words: Metrics.wordCount(text))
                 flash(pasted ? "Pasted" : "Copied to clipboard")
             } catch {
                 flash("No speech")

@@ -602,6 +602,9 @@ private struct SettingsPage: View {
                                 title: "Parakeet TDT 0.6B v3 · on-device",
                                 detail: "Speech recognition and enhancement both run locally. Audio never leaves this Mac.")
                     }
+                    SettingsSection("Licence", note: nil) {
+                        LicenceRow()
+                    }
                     SettingsSection("Uninstall",
                                     note: "Dragging Sono to the Trash removes only the app — the model and your history would stay on disk.") {
                         RemoveDataRow()
@@ -954,5 +957,118 @@ private struct SmallButton: View {
     private var background: Color {
         if filled { return themeStore.theme.accent.opacity(hovering ? 0.85 : 1) }
         return hovering ? Palette.borderSoft : .clear
+    }
+}
+
+/// Trial progress, or licence status with a key field. Shown in Settings, and
+/// surfaced on the Overview once the trial is nearly spent.
+private struct LicenceRow: View {
+    @ObservedObject private var licensing = Licensing.shared
+    @ObservedObject private var themeStore = ThemeStore.shared
+    @State private var key = ""
+    @State private var showingDeactivate = false
+
+    private var theme: Theme { themeStore.theme }
+
+    var body: some View {
+        Panel(padding: 15) {
+            VStack(alignment: .leading, spacing: 13) {
+                HStack(spacing: 12) {
+                    Image(systemName: icon)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(licensing.state == .licensed ? theme.accent : Palette.inkMuted)
+                        .frame(width: 28, height: 28)
+                        .background(RoundedRectangle(cornerRadius: 8)
+                            .fill(licensing.state == .licensed ? theme.wash : Palette.borderSoft))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(Type.font(12, .medium))
+                            .foregroundStyle(Palette.ink)
+                        Text(subtitle)
+                            .font(Type.caption)
+                            .foregroundStyle(Palette.inkSecondary)
+                    }
+                    Spacer(minLength: 8)
+                    if licensing.state == .licensed {
+                        SmallButton(title: "Deactivate this Mac", filled: false) {
+                            showingDeactivate = true
+                        }
+                    }
+                }
+
+                if case .licensed = licensing.state {} else {
+                    // Trial meter: the same "time saved" idea, but showing what's left.
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Palette.borderSoft)
+                            Capsule().fill(theme.accent)
+                                .frame(width: geometry.size.width * progress)
+                        }
+                    }
+                    .frame(height: 5)
+
+                    HStack(spacing: 8) {
+                        TextField("Licence key", text: $key)
+                            .textFieldStyle(.plain)
+                            .font(Type.font(11.5))
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 6)
+                            .background(RoundedRectangle(cornerRadius: 7).fill(Palette.canvas))
+                            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.border))
+                            .onSubmit { Task { await licensing.activate(key: key) } }
+                        SmallButton(title: licensing.isWorking ? "Checking…" : "Activate", filled: true) {
+                            Task { await licensing.activate(key: key) }
+                        }
+                        Link(destination: URL(string: "https://sono.app/buy")!) {
+                            Text("Buy · $39")
+                                .font(Type.font(11, .medium))
+                                .foregroundStyle(theme.accent)
+                        }
+                    }
+
+                    if let error = licensing.lastError {
+                        Text(error)
+                            .font(Type.caption)
+                            .foregroundStyle(Palette.warning)
+                    }
+                }
+            }
+        }
+        .confirmationDialog("Deactivate Sono on this Mac?", isPresented: $showingDeactivate) {
+            Button("Deactivate", role: .destructive) {
+                Task { await licensing.deactivateThisMac() }
+            }
+        } message: {
+            Text("This frees the activation so you can use your key on another Mac. Dictation stops working here until you activate again.")
+        }
+    }
+
+    private var progress: Double {
+        Double(licensing.wordsUsed) / Double(Licensing.trialWordLimit)
+    }
+
+    private var icon: String {
+        switch licensing.state {
+        case .licensed: "checkmark.seal"
+        case .trialEnded: "lock"
+        case .trial: "hourglass"
+        }
+    }
+
+    private var title: String {
+        switch licensing.state {
+        case .licensed: "Licensed"
+        case .trialEnded: "Trial ended"
+        case .trial: "Free trial"
+        }
+    }
+
+    private var subtitle: String {
+        switch licensing.state {
+        case .licensed: "Thank you — this Mac is activated"
+        case .trialEnded: "Enter your key to keep dictating"
+        case .trial:
+            "\(licensing.wordsRemaining) of \(Licensing.trialWordLimit) words left · one-time $39"
+        }
     }
 }
