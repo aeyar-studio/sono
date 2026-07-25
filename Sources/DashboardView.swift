@@ -131,21 +131,7 @@ private struct Sidebar: View {
 
             Spacer()
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("On-device")
-                    .font(Type.font(10, .semibold))
-                    .foregroundStyle(theme.accent)
-                Text(History.isSynced
-                     ? "Audio never leaves this Mac. History syncs through your chosen folder."
-                     : "Audio and text never leave this Mac.")
-                    .font(Type.font(10.5))
-                    .foregroundStyle(Palette.inkMuted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 9).fill(theme.wash))
-            .padding(12)
+            SidebarFooter()
         }
         .frame(width: 216)
         .background(Palette.sidebar)
@@ -1075,5 +1061,92 @@ private struct LicenceRow: View {
         case .trial:
             "\(licensing.wordsRemaining) of \(Licensing.trialWordLimit) words left · one-time $39"
         }
+    }
+}
+
+/// The bottom of the sidebar. Once someone has paid, this is the one place the
+/// app says thank you — so it uses the display face and warm wording rather than
+/// restating a feature. Before that, it quietly shows what's left of the trial.
+private struct SidebarFooter: View {
+    @ObservedObject private var licensing = Licensing.shared
+    @ObservedObject private var themeStore = ThemeStore.shared
+    @State private var appeared = false
+
+    private var theme: Theme { themeStore.theme }
+
+    var body: some View {
+        Group {
+            switch licensing.state {
+            case .licensed: licensed
+            case .trial: trial
+            case .trialEnded: ended
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(theme.wash)
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(theme.accent.opacity(0.14)))
+        )
+        .padding(12)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.5).delay(0.2)) { appeared = true }
+        }
+    }
+
+    private var licensed: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(theme.accent)
+                    .scaleEffect(appeared ? 1 : 0.6)
+                    .opacity(appeared ? 1 : 0)
+                Text("Sono is yours")
+                    .font(Type.font(14, .semibold))
+                    .foregroundStyle(Palette.ink)
+            }
+            Text("Yours for good — no subscription, no expiry.")
+                .font(Type.caption)
+                .foregroundStyle(Palette.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var trial: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("Free trial")
+                .font(Type.font(11, .semibold))
+                .foregroundStyle(theme.accent)
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(theme.accent.opacity(0.16))
+                    Capsule().fill(theme.accent)
+                        .frame(width: geometry.size.width * progress)
+                }
+            }
+            .frame(height: 4)
+            Text("\(Metrics.count(licensing.wordsRemaining)) words left")
+                .font(Type.caption)
+                .foregroundStyle(Palette.inkSecondary)
+        }
+    }
+
+    private var ended: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Trial ended")
+                .font(Type.font(11, .semibold))
+                .foregroundStyle(Palette.warning)
+            Text("Add your licence in Settings to keep dictating.")
+                .font(Type.caption)
+                .foregroundStyle(Palette.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var progress: Double {
+        min(1, Double(licensing.wordsUsed) / Double(Licensing.trialWordLimit))
     }
 }
