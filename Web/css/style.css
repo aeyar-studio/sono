@@ -808,6 +808,22 @@ details p { margin-top: 11px; font-size: 14.5px; color: var(--ink-2); max-width:
 .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.62s var(--ease), transform 0.62s var(--ease); }
 .reveal.in { opacity: 1; transform: none; }
 
+/* Phones and iPads: no stream.
+   It is a fixed 1900px band centred on the stage, so on a narrow viewport the
+   ribbon runs far past both edges and what is left on screen reads as stray
+   words rather than speech going in and text coming out. The effect needs the
+   room to be legible, so below the desktop range it is dropped entirely.
+
+   display:none, not visibility/opacity: it takes the SVG out of the render tree,
+   which is what kills the text-on-path relayout the marquee would otherwise pay
+   for on every frame. The rAF loop in initStream keeps ticking, but with nothing
+   rendered it is down to two attribute writes a frame. Gating the loop as well
+   would mean re-initialising it whenever an iPad is rotated across 1024px, which
+   is more moving parts than the saving is worth. */
+@media (max-width: 1024px) {
+  .stream-svg { display: none; }
+}
+
 @media (max-width: 720px) {
   /* Text links go; the GitHub mark stays, since an icon costs almost no width. */
   .nav-links a:not(.btn):not(.nav-icon) { display: none; }
