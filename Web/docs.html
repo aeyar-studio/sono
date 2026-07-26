@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sono · Documentation</title>
+<meta name="description" content="How to install Sono, which permissions it needs and why, what the Apple Intelligence pass does, where your data lives, and how to remove it." />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
+<meta property="og:title" content="Sono documentation" />
+<meta property="og:description" content="Install, permissions, Apple Intelligence, your data." />
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" /></filter><rect width="100%" height="100%" filter="url(#g)" /></svg>
+
+<header class="nav">
+  <a class="brand" href="/" aria-label="Sono home">
+    <svg class="mark" viewBox="0 0 34 20" aria-hidden="true">
+      <rect x="0"  y="7.2" width="4" height="5.6" rx="2" />
+      <rect x="7.5" y="4.2" width="4" height="11.6" rx="2" />
+      <rect x="15" y="0"   width="4" height="20"   rx="2" />
+      <rect x="22.5" y="4.2" width="4" height="11.6" rx="2" />
+      <rect x="30" y="7.2" width="4" height="5.6" rx="2" />
+    </svg>
+    <span class="wordmark">Sono</span>
+  </a>
+  <nav class="nav-links">
+    <a href="/#how">How it works</a>
+    <a href="/#privacy">Privacy</a>
+    <a class="nav-icon" href="https://github.com/aeyar-studio/sono"
+       target="_blank" rel="noopener" aria-label="Sono on GitHub" title="Source on GitHub">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+      </svg>
+    </a>
+    <a class="btn btn-solid btn-sm" href="/releases/Sono-1.0.dmg" download>Download</a>
+  </nav>
+</header>
+
+<main class="docs">
+
+  <header class="docs-head">
+    <p class="eyebrow">Documentation</p>
+    <h1>Everything Sono does,<br />and where it keeps it.</h1>
+    <p class="lede">
+      Sono is deliberately small. This page is most of what there is to know,
+      including the two things the app cannot tell you itself: that the
+      Apple Intelligence pass ships switched off, and that dragging the app to
+      the Trash leaves the speech model behind.
+    </p>
+  </header>
+
+  <nav class="docs-toc" aria-label="On this page">
+    <a href="#install">Install</a>
+    <a href="#permissions">Permissions</a>
+    <a href="#using">Using it</a>
+    <a href="#intelligence">Apple Intelligence</a>
+    <a href="#settings">Settings</a>
+    <a href="#data">Your data</a>
+    <a href="#trouble">Troubleshooting</a>
+  </nav>
+
+  <!-- ─────────────────────────────── install -->
+  <section class="docs-sec" id="install">
+    <h2>Install</h2>
+    <p>
+      Sono needs <b>macOS 26 or later</b>. It is signed with a Developer ID and
+      notarised by Apple, so it opens without any Gatekeeper warning and without
+      right click and Open.
+    </p>
+    <ol class="docs-steps">
+      <li><b>Download the disk image</b> and open it.</li>
+      <li><b>Drag Sono to Applications.</b> Running it from the mounted image
+        works, but the permissions you grant will not carry over once you move it.</li>
+      <li><b>Open Sono.</b> It asks for two permissions, then downloads the speech
+        model.</li>
+    </ol>
+    <div class="docs-note">
+      <p>
+        <b>The first launch downloads about 465 MB</b> and unpacks to roughly
+        640 MB. Sono checks for 1.25 GB free before it starts. The model is not
+        in the app bundle on purpose: bundling it would make every future update
+        a 640 MB download. It is fetched once, verified against a pinned SHA-256,
+        and never downloaded again.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────── permissions -->
+  <section class="docs-sec" id="permissions">
+    <h2>Permissions</h2>
+    <p>
+      Both are requested at first launch, together, so nothing interrupts you
+      mid sentence later.
+    </p>
+
+    <div class="docs-grid">
+      <div class="docs-card">
+        <h3>Microphone</h3>
+        <p>To hear you. Without it Sono cannot record at all.</p>
+        <p class="docs-meta">System Settings → Privacy &amp; Security → Microphone</p>
+      </div>
+      <div class="docs-card">
+        <h3>Accessibility</h3>
+        <p>
+          To press Command V for you in the app you are typing in. macOS treats
+          synthetic keystrokes as a privileged action, which is why this one asks
+          for your password.
+        </p>
+        <p class="docs-meta">System Settings → Privacy &amp; Security → Accessibility</p>
+      </div>
+    </div>
+
+    <div class="docs-note docs-note-warn">
+      <p>
+        <b>If you decline Accessibility, Sono keeps working but stops pasting.</b>
+        Your text is copied to the clipboard instead and you press Command V
+        yourself. This is easy to miss, because nothing looks broken. If you find
+        yourself pasting manually every time, that is the reason.
+      </p>
+    </div>
+
+    <p>
+      Sono never asks for Speech Recognition. That permission covers Apple's
+      dictation service, which Sono does not use. Transcription happens in
+      Sono's own process.
+    </p>
+  </section>
+
+  <!-- ─────────────────────────────── using -->
+  <section class="docs-sec" id="using">
+    <h2>Using it</h2>
+    <p>The Option key does both jobs, and Sono tells them apart by how long you hold it.</p>
+
+    <table class="docs-table">
+      <thead><tr><th>Gesture</th><th>What happens</th><th>Good for</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Tap ⌥</b></td>
+          <td>Starts recording. Tap again to stop.</td>
+          <td>Anything longer than a sentence, where holding a key gets tiring.</td>
+        </tr>
+        <tr>
+          <td><b>Hold ⌥</b></td>
+          <td>Records while held, past about a third of a second, and stops the
+              moment you let go.</td>
+          <td>A quick sentence, push to talk.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      When you stop, the text lands in whatever app was focused, all at once.
+      Sono does not type character by character. Silence at either end is
+      trimmed before transcription, so pauses cost you nothing.
+    </p>
+    <p>
+      Your clipboard is put back the way it was afterwards, images and formatting
+      included. If you copied something else in the meantime, Sono notices and
+      leaves your newer clipboard alone.
+    </p>
+  </section>
+
+  <!-- ─────────────────────────────── apple intelligence -->
+  <section class="docs-sec" id="intelligence">
+    <h2>Apple Intelligence</h2>
+    <p>
+      This is the part that makes Sono more than a transcriber, and it is
+      <b>switched off when you install</b>. That is deliberate: the first
+      dictation you ever run should be as fast as your Mac can manage, and the
+      polish pass adds a second or two.
+    </p>
+    <p class="docs-turnon">
+      Turn it on in <b>Settings → Enhancement</b>. Nothing leaves your Mac either
+      way; the model runs on device.
+    </p>
+
+    <h3>What it fixes</h3>
+    <ul class="docs-list">
+      <li><b>Fillers.</b> The ums, uhs and false starts go.</li>
+      <li><b>Self corrections.</b> Say "on Tuesday, no, on Thursday" and you get
+        "on Thursday".</li>
+      <li><b>Grammar and punctuation</b>, without rewriting your voice.</li>
+      <li><b>Spoken lists become real lists</b>, numbered and on their own lines.</li>
+    </ul>
+
+    <h3>When it declines</h3>
+    <p>
+      Sono never trusts the language model blindly. The polished text is thrown
+      away and your raw transcript is used instead if the result comes back
+      empty, more than about twice as long as the original (the model answered
+      the transcript instead of editing it), less than half as long (it ate a
+      clause), or opens like a refusal.
+    </p>
+    <p>
+      A bad model response therefore costs you polish, never words. On a Mac
+      without Apple Intelligence available, the toggle simply has no effect.
+    </p>
+  </section>
+
+  <!-- ─────────────────────────────── settings -->
+  <section class="docs-sec" id="settings">
+    <h2>Settings</h2>
+    <table class="docs-table">
+      <thead><tr><th>Setting</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Enhancement</td><td><b>Off</b></td>
+            <td>The Apple Intelligence pass described above.</td></tr>
+        <tr><td>Appearance</td><td>Light</td>
+            <td>Light, dark, or follow the system.</td></tr>
+        <tr><td>Accent</td><td>Lavender</td>
+            <td>Dashboard colour. Six options: lavender, terracotta, ochre, moss,
+                dusty rose, burgundy. The brand mark never follows it, on purpose.</td></tr>
+        <tr><td>Sounds</td><td>On</td>
+            <td>A short cue when recording starts and stops.</td></tr>
+        <tr><td>History folder</td><td>Application Support</td>
+            <td>Move <code>history.jsonl</code> anywhere. Point it at iCloud Drive
+                to carry your history between Macs.</td></tr>
+        <tr><td>Automatic updates</td><td>On</td>
+            <td>A daily check for a new version. See below for what it sends.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ─────────────────────────────── data -->
+  <section class="docs-sec" id="data">
+    <h2>Your data</h2>
+
+    <h3>Where it lives</h3>
+    <table class="docs-table">
+      <thead><tr><th>What</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>Transcript history</td>
+            <td><code>~/Library/Application Support/Sono/history.jsonl</code></td></tr>
+        <tr><td>Speech model</td>
+            <td><code>~/Library/Application Support/Sono/models/</code></td></tr>
+        <tr><td>Preferences</td>
+            <td>Standard macOS preferences for <code>com.aeyar.Sono</code></td></tr>
+      </tbody>
+    </table>
+    <p>
+      The history file is newline delimited JSON, one dictation per line, so you
+      can read it, grep it, or process it with anything. Nothing is encrypted,
+      because nothing is hidden from you.
+    </p>
+
+    <h3>What the dashboard counts</h3>
+    <p>
+      Every figure is derived from that one history file. There is no separate
+      analytics store, and nothing is sent anywhere. It tracks dictations, words
+      and characters, total time spoken, a daily words chart, and a per app
+      breakdown showing which apps you dictate into most.
+    </p>
+
+    <h3>What leaves your Mac</h3>
+    <p>
+      Two requests, and neither carries audio or text. The one time model
+      download on first launch, and a daily check for a new version, which sends
+      a version number and nothing else. System profiling is disabled, so no
+      macOS version, CPU or Mac model is attached. You can turn the update check
+      off in Settings.
+    </p>
+
+    <h3>Removing everything</h3>
+    <div class="docs-note docs-note-warn">
+      <p>
+        <b>Dragging Sono to the Trash removes only the app.</b> The 640 MB model
+        and your entire transcript history stay on disk. For an app that promises
+        your words stay on your machine, leaving them behind is the wrong default.
+      </p>
+    </div>
+    <p>
+      Use <b>Settings → Remove all data</b> instead. It tells you exactly how much
+      it is about to delete, removes the model, the history wherever you moved it
+      to, and the preferences, then quits. Drag the app itself to the Trash
+      afterwards; a running app cannot delete its own bundle.
+    </p>
+  </section>
+
+  <!-- ─────────────────────────────── troubleshooting -->
+  <section class="docs-sec" id="trouble">
+    <h2>Troubleshooting</h2>
+
+    <div class="docs-qa">
+      <h3>Text goes to the clipboard instead of being pasted</h3>
+      <p>
+        Accessibility is not granted. System Settings → Privacy &amp; Security →
+        Accessibility, and switch Sono on. If Sono is already listed, switch it
+        off and on again; a stale entry pointing at an older copy of the app will
+        look correct but grant nothing.
+      </p>
+    </div>
+
+    <div class="docs-qa">
+      <h3>The first launch sits on "Downloading model"</h3>
+      <p>
+        It is fetching about 465 MB. On a slow connection this takes a while.
+        It happens once. If it fails, Sono verifies the download against a
+        checksum and will fetch it again rather than run on a corrupted model.
+      </p>
+    </div>
+
+    <div class="docs-qa">
+      <h3>Nothing happens when I hold Option</h3>
+      <p>
+        Hold it a little longer. Push to talk starts after about a third of a
+        second, so that ordinary use of Option as a modifier does not start a
+        recording. A quick tap toggles recording instead.
+      </p>
+    </div>
+
+    <div class="docs-qa">
+      <h3>The text is accurate but still has my ums in it</h3>
+      <p>
+        That is the raw transcript, which means the enhancement pass is off. It
+        ships that way. Settings → Enhancement.
+      </p>
+    </div>
+
+    <div class="docs-qa">
+      <h3>Enhancement is on but nothing seems different</h3>
+      <p>
+        Sono discards the polished text and keeps your words whenever the result
+        looks wrong, so a bad response is invisible by design. It also needs a Mac
+        with Apple Intelligence available. Shorter dictations polish more reliably
+        than very long ones.
+      </p>
+    </div>
+
+    <div class="docs-qa">
+      <h3>Something else</h3>
+      <p>
+        Open an issue on <a href="https://github.com/aeyar-studio/sono/issues"
+        target="_blank" rel="noopener">GitHub</a>, or email
+        <a href="mailto:support@heysono.app">support@heysono.app</a>. Sono is open
+        source, so the answer to "what does it actually do here" is always
+        readable.
+      </p>
+    </div>
+  </section>
+
+  <section class="docs-cta">
+    <h2>Free, and nothing to sign up for.</h2>
+    <a class="btn btn-solid" href="/releases/Sono-1.0.dmg" download>
+      <svg class="apple" viewBox="5.2 2.6 14.5 18.3" aria-hidden="true">
+        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+      </svg>
+      Download for macOS
+    </a>
+    <p class="docs-cta-meta">macOS 26 or later · signed and notarised · 26 MB</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-brand">
+    <svg class="mark" viewBox="0 0 34 20" aria-hidden="true">
+      <rect x="0"  y="7.2" width="4" height="5.6" rx="2" />
+      <rect x="7.5" y="4.2" width="4" height="11.6" rx="2" />
+      <rect x="15" y="0"   width="4" height="20"   rx="2" />
+      <rect x="22.5" y="4.2" width="4" height="11.6" rx="2" />
+      <rect x="30" y="7.2" width="4" height="5.6" rx="2" />
+    </svg>
+    <span class="wordmark">Sono</span>
+  </div>
+  <p class="foot-line">Made for people who think out loud.</p>
+  <p class="foot-meta">
+    <a href="mailto:support@heysono.app">support@heysono.app</a>
+    <span aria-hidden="true">·</span>
+    <a href="/#privacy">Privacy</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://github.com/aeyar-studio/sono" target="_blank" rel="noopener">Source</a>
+    <span aria-hidden="true">·</span>
+    <span>&copy; 2026 Aeyar Studio</span>
+  </p>
+</footer>
+
+</body>
+</html>

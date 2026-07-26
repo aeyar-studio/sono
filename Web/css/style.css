@@ -808,6 +808,125 @@ details p { margin-top: 11px; font-size: 14.5px; color: var(--ink-2); max-width:
 .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.62s var(--ease), transform 0.62s var(--ease); }
 .reveal.in { opacity: 1; transform: none; }
 
+/* ───────────────────────────────────────────── docs
+   One long page rather than a docs framework. Sono has seven things worth
+   explaining, and a sidebar, search and versioning would be more machinery than
+   subject matter. */
+.docs { max-width: 780px; margin: 0 auto; padding: clamp(56px, 9vw, 104px) 22px 40px; }
+.docs-head { margin-bottom: 44px; }
+.docs-head h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(34px, 5.4vw, 56px); font-weight: 600;
+  letter-spacing: -0.025em; line-height: 1.08; margin: 12px 0 20px;
+}
+.docs-head .lede { margin: 0; max-width: 62ch; }
+
+/* Anchor nav. Wraps to as many rows as it needs instead of scrolling. */
+.docs-toc {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 16px 0 0; border-top: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.docs-toc a {
+  font-size: 13.5px; color: var(--ink-2);
+  padding: 6px 12px; border-radius: 8px; background: var(--sand);
+  transition: color 0.2s, background 0.2s;
+}
+.docs-toc a:hover { color: var(--ink); background: var(--tint); }
+
+.docs-sec { padding-top: 46px; }
+/* Sections are anchor targets; without this the sticky header covers the
+   heading you just jumped to. */
+.docs-sec, .docs-cta { scroll-margin-top: 84px; }
+.docs-sec h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(26px, 3.4vw, 34px); font-weight: 600;
+  letter-spacing: -0.02em; margin: 0 0 18px;
+}
+.docs-sec h3 {
+  font-size: 17px; font-weight: 700; color: var(--ink);
+  margin: 30px 0 10px; letter-spacing: -0.01em;
+}
+.docs-sec p { margin: 0 0 14px; color: var(--ink-2); line-height: 1.68; }
+.docs-sec p b, .docs-sec li b { color: var(--ink); font-weight: 650; }
+.docs-sec a:not(.btn) { color: var(--accent-deep); text-decoration: underline;
+  text-underline-offset: 2px; text-decoration-thickness: 1px; }
+
+.docs-steps, .docs-list { margin: 0 0 16px; padding-left: 22px; }
+.docs-steps li, .docs-list li { color: var(--ink-2); line-height: 1.68; margin-bottom: 9px; }
+.docs-steps { counter-reset: step; }
+
+.docs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+.docs-card {
+  padding: 20px 22px; border-radius: var(--radius);
+  background: var(--panel); border: 1px solid var(--border);
+  /* Column with the path line pushed down, so the two cards' footers line up
+     even though one has three lines of body copy and the other has one. */
+  display: flex; flex-direction: column;
+}
+.docs-card h3 { margin: 0 0 8px; }
+.docs-card p { margin: 0 0 8px; font-size: 14.5px; }
+.docs-card p:last-child { margin: 0; }
+.docs-card .docs-meta { margin-top: auto; padding-top: 10px; }
+.docs-meta { font-size: 12.5px !important; color: var(--ink-3) !important; }
+
+.docs-note {
+  padding: 17px 20px; border-radius: var(--radius);
+  background: var(--wash); border: 1px solid var(--tint);
+  margin: 18px 0;
+}
+.docs-note p { margin: 0; font-size: 14.5px; }
+/* Warnings carry a left rule rather than a red fill: these are things worth
+   noticing, not errors. */
+.docs-note-warn { background: var(--sand); border-color: var(--border);
+  border-left: 3px solid var(--accent); }
+
+.docs-turnon {
+  padding: 14px 18px; border-radius: 10px;
+  background: var(--ink); color: var(--cream) !important;
+  font-size: 15px; margin: 0 0 22px !important;
+}
+.docs-turnon b { color: #fff !important; }
+
+/* Wide tables scroll inside their own box; the page never scrolls sideways. */
+.docs-table {
+  width: 100%; border-collapse: collapse; margin: 4px 0 18px;
+  font-size: 14.5px; display: block; overflow-x: auto;
+}
+.docs-table th, .docs-table td {
+  text-align: left; padding: 11px 14px 11px 0;
+  border-bottom: 1px solid var(--border-soft); vertical-align: top;
+}
+.docs-table th {
+  font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--ink-3); font-weight: 700; border-bottom-color: var(--border);
+}
+.docs-table td { color: var(--ink-2); line-height: 1.6; }
+.docs-table td:first-child { color: var(--ink); white-space: nowrap; padding-right: 26px; }
+.docs-table code, .docs-sec code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em; background: var(--sand); padding: 2px 6px; border-radius: 5px;
+  color: var(--ink); white-space: nowrap;
+}
+
+.docs-qa { padding: 18px 0; border-bottom: 1px solid var(--border-soft); }
+.docs-qa:last-child { border-bottom: 0; }
+.docs-qa h3 { margin: 0 0 8px; }
+.docs-qa p { margin: 0; font-size: 14.5px; }
+
+.docs-cta { text-align: center; padding: 64px 0 20px; margin-top: 40px;
+  border-top: 1px solid var(--border); }
+.docs-cta h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(24px, 3.4vw, 32px); font-weight: 600;
+  letter-spacing: -0.02em; margin: 0 0 22px;
+}
+.docs-cta-meta { font-size: 13px; color: var(--ink-3); margin: 16px 0 0; }
+
+@media (max-width: 620px) {
+  .docs-grid { grid-template-columns: 1fr; }
+}
+
 /* Phones and iPads: no stream.
    It is a fixed 1900px band centred on the stage, so on a narrow viewport the
    ribbon runs far past both edges and what is left on screen reads as stray
