@@ -649,6 +649,39 @@ private struct PolishRow: View {
 /// label cannot carry (one needs hardware, one needs a 2.3 GB download, they
 /// cost different amounts of time), and someone choosing should see all of that
 /// at once instead of clicking through to find out.
+
+/// The switch, drawn by us.
+///
+/// `.tint()` on `Toggle(.switch)` is honoured on macOS 26.5 but ignored on
+/// 26.0.1, where AppKit falls back to the system accent: a blue switch that does
+/// not follow the theme, on a machine where every other themed control does.
+/// Verified by elimination, the two Macs differed in nothing else. Drawing the
+/// track and knob ourselves removes the dependency on that behaviour entirely,
+/// so it looks the same on every version.
+struct ThemedSwitch: ToggleStyle {
+    @ObservedObject private var themeStore = ThemeStore.shared
+
+    func makeBody(configuration: Configuration) -> some View {
+        let on = configuration.isOn
+        return HStack(spacing: 0) {
+            configuration.label
+            Capsule()
+                .fill(on ? themeStore.theme.accent : Palette.border)
+                .frame(width: 38, height: 22)
+                .overlay(alignment: on ? .trailing : .leading) {
+                    Circle()
+                        .fill(.white)
+                        .padding(2)
+                        .shadow(color: .black.opacity(0.18), radius: 1, y: 0.5)
+                }
+                .animation(.easeOut(duration: 0.16), value: on)
+                .contentShape(Capsule())
+                .onTapGesture { configuration.isOn.toggle() }
+                .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+        }
+    }
+}
+
 private struct EngineOption: View {
     @ObservedObject private var themeStore = ThemeStore.shared
     private var theme: Theme { themeStore.theme }
@@ -1019,8 +1052,7 @@ private struct ToggleRow: View {
                 }
                 Spacer(minLength: 12)
                 Toggle("", isOn: $isOn)
-                    .toggleStyle(.switch)
-                    .tint(themeStore.theme.accent)
+                    .toggleStyle(ThemedSwitch())
                     .labelsHidden()
             }
         }

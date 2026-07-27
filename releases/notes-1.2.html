@@ -1,0 +1,60 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Sono 1.2</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 13px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    margin: 0; padding: 14px 16px 18px;
+    color: #1d1d1f; background: transparent;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: #6e6e73; margin: 0 0 14px; font-size: 12px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #6e6e73; margin: 16px 0 6px; font-weight: 600;
+  }
+  ul { margin: 0; padding-left: 17px; }
+  li { margin: 0 0 5px; }
+  b { font-weight: 600; }
+  .note {
+    margin: 16px 0 0; padding: 9px 11px; border-radius: 7px;
+    background: rgba(0,0,0,0.045); color: #424245; font-size: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #f5f5f7; }
+    .sub, h2 { color: #98989d; }
+    .note { background: rgba(255,255,255,0.07); color: #c7c7cc; }
+  }
+</style>
+
+<h1>Sono 1.2</h1>
+<p class="sub">You can finally see the local model download.</p>
+
+<h2>A download you can watch</h2>
+<ul>
+  <li>Choosing the local model now shows a <b>real percentage and byte count</b>,
+    "46% · 963.7 MB of 2.05 GB", and a bar that moves with it.</li>
+  <li>Previously it showed <b>0%</b> for the entire download, then in 1.1.1 a bar
+    too thin to see move. It was working both times, but there was no way to know
+    that, and twenty minutes of a frozen number looks exactly like a hang.</li>
+  <li>The model now comes from Sono's own release page rather than a third party,
+    which in testing was about <b>three times faster</b> and, more importantly,
+    means the total is known before the first byte arrives. That is where the
+    honest percentage comes from.</li>
+  <li>The download is checked against a pinned SHA-256 before it is unpacked, so a
+    corrupted or interrupted transfer is caught rather than half installed.</li>
+</ul>
+
+<h2>Also fixed</h2>
+<ul>
+  <li><b>Switches follow your accent colour again on macOS 26.0.</b> They were
+    drawn in the system blue there and ignored the theme, while behaving correctly
+    on 26.5. Sono now draws its own switch, so it looks the same on every version.</li>
+  <li><b>Remove all data</b> now deletes the local model too.</li>
+</ul>
+
+<p class="note">
+  Nothing about how the enhancement works has changed, only how the model gets
+  here. If you already have it downloaded, this update leaves it alone.
+</p>

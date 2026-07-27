@@ -87,9 +87,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.aeyar.Sono
         DEVELOPMENT_TEAM: J9JLP45K5F
         CODE_SIGN_STYLE: Automatic
-        MARKETING_VERSION: "1.1.1"
+        MARKETING_VERSION: "1.2"
         # Monotonic. Bump on every release, never reuse.
-        CURRENT_PROJECT_VERSION: "3"
+        CURRENT_PROJECT_VERSION: "4"
         SWIFT_VERSION: "5.0"   # ponytail: Swift 6 strict concurrency vs AVAudioEngine taps is a fight for later
         ENABLE_HARDENED_RUNTIME: true
         SWIFT_INCLUDE_PATHS: $(PROJECT_DIR)/Vendor/sherpa
