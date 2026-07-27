@@ -584,7 +584,12 @@ private struct PolishRow: View {
     /// nil means show the ordinary "Adds 2 to 2.5 seconds".
     private var localStatus: String? {
         switch download {
-        case .downloading(let f): "Downloading, \(Int(f * 100))%"
+        // No percentage. The Progress the downloader hands back does not track
+        // the big weights file: measured at roughly 800 MB of 2.3 GB actually
+        // transferred, fractionCompleted was still under 0.01, so the label sat
+        // on "0%" for the whole download and read as a hang. An honest
+        // indeterminate bar beats a number that is wrong.
+        case .downloading: "Downloading, a few minutes"
         case .loading: "Loading the model"
         case .failed(let why): "Download failed. \(why)"
         case .ready: "Loaded and ready"
@@ -592,9 +597,10 @@ private struct PolishRow: View {
         }
     }
 
-    private var downloadFraction: Double? {
-        if case .downloading(let f) = download { return f }
-        return nil
+    /// True only while bytes are moving, so the row can show an indeterminate bar.
+    private var isDownloading: Bool {
+        if case .downloading = download { return true }
+        return false
     }
 
     var body: some View {
@@ -605,7 +611,7 @@ private struct PolishRow: View {
                                  active: engine == option,
                                  available: enabled(option),
                                  status: option == .local ? localStatus : nil,
-                                 progress: option == .local ? downloadFraction : nil) {
+                                 busy: option == .local && isDownloading) {
                         withAnimation(.easeOut(duration: 0.16)) { raw = option.rawValue }
                     }
                 }
@@ -647,7 +653,8 @@ private struct EngineOption: View {
     let available: Bool
     /// Overrides the cost line while the local model is downloading or loading.
     let status: String?
-    let progress: Double?
+    /// Shows an indeterminate bar. Deliberately not a fraction, see localStatus.
+    let busy: Bool
     let select: () -> Void
 
     @State private var hovering = false
@@ -674,10 +681,11 @@ private struct EngineOption: View {
                     Text(option.detail)
                         .font(Type.font(10.5))
                         .foregroundStyle(Palette.inkSecondary)
-                    if let progress {
-                        // Only while downloading, so the row does not carry an
-                        // empty bar for the whole life of the settings screen.
-                        ProgressView(value: progress)
+                    if busy {
+                        // Indeterminate: the downloader's fraction is not
+                        // trustworthy for the large file, and a bar frozen near
+                        // zero for twenty minutes looks like a crash.
+                        ProgressView()
                             .progressViewStyle(.linear)
                             .tint(theme.accent)
                             .frame(height: 2)

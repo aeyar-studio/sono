@@ -1,0 +1,42 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Sono 1.1.1</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 13px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    margin: 0; padding: 14px 16px 18px;
+    color: #1d1d1f; background: transparent;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: #6e6e73; margin: 0 0 14px; font-size: 12px; }
+  ul { margin: 0; padding-left: 17px; }
+  li { margin: 0 0 5px; }
+  b { font-weight: 600; }
+  .note {
+    margin: 16px 0 0; padding: 9px 11px; border-radius: 7px;
+    background: rgba(0,0,0,0.045); color: #424245; font-size: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #f5f5f7; }
+    .sub { color: #98989d; }
+    .note { background: rgba(255,255,255,0.07); color: #c7c7cc; }
+  }
+</style>
+
+<h1>Sono 1.1.1</h1>
+<p class="sub">The local model download no longer looks broken.</p>
+
+<ul>
+  <li>Choosing the local model showed <b>"Downloading, 0%"</b> and never moved, for
+    the entire download. It was working the whole time, but there was no way to
+    tell, and twenty minutes of a frozen zero looks exactly like a hang.</li>
+  <li>The percentage came from a progress figure that does not track the large
+    weights file. It is gone. The row now shows a moving bar and says
+    <b>"Downloading, a few minutes"</b>, which is the truth.</li>
+</ul>
+
+<p class="note">
+  Nothing else changed. If the local model already finished downloading, this
+  update does not affect you.
+</p>
