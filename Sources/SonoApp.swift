@@ -166,8 +166,9 @@ final class Dictation {
                 let raw = try await transcriber.transcribe(speech)
                 // LLM sees the RAW transcript (strip would eat its correction
                 // markers); regex strip runs after, catching missed fillers.
-                let text = (Settings.polishEnabled && Polisher.isAvailable)
-                    ? Cleanup.strip(await Polisher.polish(raw))
+                let engine = Settings.polishEngine
+                let text = Polish.isAvailable(engine)
+                    ? Cleanup.strip(await Polish.run(raw, using: engine))
                     : Cleanup.strip(raw)
                 // Read before the paste, while the target is still frontmost.
                 let target = Injector.target()

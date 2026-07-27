@@ -56,7 +56,11 @@ echo "  version: $VERSION"
 step "Building Release"
 xcodegen generate >/dev/null
 rm -rf "$BUILD_DIR" && mkdir -p "$BUILD_DIR"
+# MLX ships Swift macros, and Xcode refuses to run a package macro until it has
+# been trusted in the UI. That prompt cannot appear in a script, so the flag is
+# required here or every release fails on a machine that has not opened Xcode.
 xcodebuild -project Sono.xcodeproj -scheme "$APP_NAME" -configuration Release \
+  -skipMacroValidation \
   CONFIGURATION_BUILD_DIR="$BUILD_DIR" \
   CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
   build > "$BUILD_DIR/build.log" 2>&1 \

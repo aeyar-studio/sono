@@ -9,6 +9,20 @@ packages:
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: 2.9.4
+  # Local polish backend. MLX is Apple's own inference framework and the fastest
+  # option under 14B on Apple Silicon; Ollama was rejected because it is a
+  # separate app the user has to install and keep running, which breaks the
+  # "download it and it works" promise. The two huggingface packages supply the
+  # downloader and the tokenizer that MLXLMCommon leaves pluggable.
+  mlx-swift-lm:
+    url: https://github.com/ml-explore/mlx-swift-lm
+    from: 3.31.3
+  swift-huggingface:
+    url: https://github.com/huggingface/swift-huggingface
+    from: 0.9.0
+  swift-transformers:
+    url: https://github.com/huggingface/swift-transformers
+    from: 1.3.0
 
 targets:
   Sono:
@@ -23,6 +37,16 @@ targets:
         buildPhase: resources
     dependencies:
       - package: Sparkle
+      - package: mlx-swift-lm
+        product: MLXLLM
+      - package: mlx-swift-lm
+        product: MLXLMCommon
+      - package: mlx-swift-lm
+        product: MLXHuggingFace
+      - package: swift-huggingface
+        product: HuggingFace
+      - package: swift-transformers
+        product: Tokenizers
     entitlements:
       path: Sono.entitlements
       properties:
@@ -36,7 +60,14 @@ targets:
       path: Info.plist
       properties:
         NSMicrophoneUsageDescription: Sono transcribes your speech on this Mac. Audio never leaves the device.
-        CFBundleShortVersionString: "0.1"
+        # Both derive from the build settings below, so there is exactly one
+        # place to bump. Hardcoding these is how 1.0 shipped reporting "0.1"
+        # while the appcast advertised "1.0".
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        # Sparkle compares THIS against sparkle:version in the appcast. If it
+        # does not increase every release, the updater offers the same build
+        # forever: install, still reads the old number, offer again.
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleIconFile: Sono
         # The canonical user-facing name. Without it macOS falls back to the
         # bundle filename in some panes, which is how "Sono.app" appears instead
@@ -56,7 +87,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.aeyar.Sono
         DEVELOPMENT_TEAM: J9JLP45K5F
         CODE_SIGN_STYLE: Automatic
-        MARKETING_VERSION: "1.0"
+        MARKETING_VERSION: "1.1"
+        # Monotonic. Bump on every release, never reuse.
+        CURRENT_PROJECT_VERSION: "2"
         SWIFT_VERSION: "5.0"   # ponytail: Swift 6 strict concurrency vs AVAudioEngine taps is a fight for later
         ENABLE_HARDENED_RUNTIME: true
         SWIFT_INCLUDE_PATHS: $(PROJECT_DIR)/Vendor/sherpa

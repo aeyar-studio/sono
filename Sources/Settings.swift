@@ -4,6 +4,7 @@ import SwiftUI
 /// by the dashboard's @AppStorage bindings — same UserDefaults keys.
 enum Settings {
     static let polishKey = "polishEnabled"
+    static let engineKey = "polishEngine"
     static let themeKey = "accentTheme"
     static let appearanceKey = "appearance"
     static let soundsKey = "soundsEnabled"
@@ -12,14 +13,24 @@ enum Settings {
     static let historyFolderKey = "historyFolder"
     static let autoUpdateKey = "automaticUpdateChecks"
 
-    /// Run transcripts through Apple Intelligence for self-corrections and
-    /// grammar. Off means raw Parakeet output plus the regex filler sweep —
-    /// noticeably faster, less tidy. Default on.
     /// Off by default. The polish pass is what makes Sono more than a transcript,
     /// but it adds a beat before the text lands, and a first run should feel
     /// instant. Users who want the cleanup turn it on in Settings.
     static var polishEnabled: Bool {
         UserDefaults.standard.object(forKey: polishKey) as? Bool ?? false
+    }
+
+    /// Which model does the cleanup.
+    ///
+    /// Falls back to the old boolean when no engine has been chosen, so anyone
+    /// upgrading keeps exactly the behaviour they had: the toggle they switched
+    /// on becomes Apple Intelligence, and off stays off.
+    static var polishEngine: PolishEngine {
+        if let raw = UserDefaults.standard.string(forKey: engineKey),
+           let engine = PolishEngine(rawValue: raw) {
+            return engine
+        }
+        return polishEnabled ? .apple : .off
     }
 
     /// Check for updates in the background, once a day. Default on; the switch

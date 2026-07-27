@@ -569,42 +569,148 @@ private struct StatRow: View {
 private struct PolishRow: View {
     @ObservedObject private var themeStore = ThemeStore.shared
     private var theme: Theme { themeStore.theme }
-    @Binding var enabled: Bool
+    @AppStorage(Settings.engineKey) private var raw = Settings.polishEngine.rawValue
+    @State private var download: LocalPolisher.State = .idle
 
-    private var subtitle: String {
-        guard Polisher.isAvailable else {
-            return "Unavailable. Turn on Apple Intelligence in System Settings"
+    private var engine: PolishEngine { PolishEngine(rawValue: raw) ?? .off }
+
+    /// Apple Intelligence is the only option that can be missing: the local model
+    /// downloads, and off always works.
+    private func enabled(_ e: PolishEngine) -> Bool {
+        e == .apple ? Polisher.isAvailable : true
+    }
+
+    /// Replaces the local row's cost line while something is happening to it.
+    /// nil means show the ordinary "Adds 2 to 2.5 seconds".
+    private var localStatus: String? {
+        switch download {
+        case .downloading(let f): "Downloading, \(Int(f * 100))%"
+        case .loading: "Loading the model"
+        case .failed(let why): "Download failed. \(why)"
+        case .ready: "Loaded and ready"
+        case .idle: LocalPolisher.isDownloaded ? nil : "Downloads 2.3 GB the first time"
         }
-        return enabled
-            ? "Fixes self-corrections and grammar · adds about a second"
-            : "Off. Raw transcription, fastest output"
+    }
+
+    private var downloadFraction: Double? {
+        if case .downloading(let f) = download { return f }
+        return nil
     }
 
     var body: some View {
-        Panel(padding: 15) {
-            HStack(spacing: 12) {
-                Image(systemName: "wand.and.sparkles")
-                    .font(Type.font(12, .medium))
-                    .foregroundStyle(enabled && Polisher.isAvailable ? theme.accent : Palette.inkMuted)
-                    .frame(width: 28, height: 28)
-                    .background(RoundedRectangle(cornerRadius: 8)
-                        .fill(enabled && Polisher.isAvailable ? theme.wash : Palette.sidebar))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Enhance with Apple Intelligence")
-                        .font(Type.font(12, .medium))
-                        .foregroundStyle(Palette.ink)
-                    Text(subtitle)
-                        .font(Type.font(10.5))
-                        .foregroundStyle(Palette.inkSecondary)
+        Panel(padding: 10) {
+            VStack(spacing: 6) {
+                ForEach(PolishEngine.allCases) { option in
+                    EngineOption(option: option,
+                                 active: engine == option,
+                                 available: enabled(option),
+                                 status: option == .local ? localStatus : nil,
+                                 progress: option == .local ? downloadFraction : nil) {
+                        withAnimation(.easeOut(duration: 0.16)) { raw = option.rawValue }
+                    }
                 }
-                Spacer(minLength: 12)
-                Toggle("", isOn: $enabled)
-                    .toggleStyle(.switch)
-                    .tint(theme.accent)
-                    .labelsHidden()
-                    .disabled(!Polisher.isAvailable)
             }
         }
+        // Poll while the local engine is selected, so the download reports
+        // progress without the actor needing to publish into SwiftUI.
+        .task(id: raw) {
+            guard engine == .local else { return }
+            while !Task.isCancelled {
+                download = await LocalPolisher.shared.currentState()
+                if case .ready = download { break }
+                if case .failed = download { break }
+                try? await Task.sleep(for: .milliseconds(400))
+            }
+        }
+        // Start the download when the user picks local, rather than making the
+        // first dictation wait on it.
+        .onChange(of: raw) { _, new in
+            if PolishEngine(rawValue: new) == .local {
+                Task { await LocalPolisher.shared.prefetch() }
+            }
+        }
+    }
+}
+
+/// One engine, as a selectable row.
+///
+/// Rows rather than a segmented control: these three options differ in ways a
+/// label cannot carry (one needs hardware, one needs a 2.3 GB download, they
+/// cost different amounts of time), and someone choosing should see all of that
+/// at once instead of clicking through to find out.
+private struct EngineOption: View {
+    @ObservedObject private var themeStore = ThemeStore.shared
+    private var theme: Theme { themeStore.theme }
+
+    let option: PolishEngine
+    let active: Bool
+    let available: Bool
+    /// Overrides the cost line while the local model is downloading or loading.
+    let status: String?
+    let progress: Double?
+    let select: () -> Void
+
+    @State private var hovering = false
+
+    private var costLine: String {
+        guard available else { return "Not available on this Mac" }
+        return status ?? option.cost
+    }
+
+    var body: some View {
+        Button(action: select) {
+            HStack(spacing: 11) {
+                Image(systemName: option.icon)
+                    .font(Type.font(12, .medium))
+                    .foregroundStyle(active ? theme.accent : Palette.inkMuted)
+                    .frame(width: 30, height: 30)
+                    .background(RoundedRectangle(cornerRadius: 8)
+                        .fill(active ? theme.wash : Palette.borderSoft.opacity(0.7)))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.name)
+                        .font(.system(size: 12, weight: active ? .semibold : .medium))
+                        .foregroundStyle(available ? Palette.ink : Palette.inkMuted)
+                    Text(option.detail)
+                        .font(Type.font(10.5))
+                        .foregroundStyle(Palette.inkSecondary)
+                    if let progress {
+                        // Only while downloading, so the row does not carry an
+                        // empty bar for the whole life of the settings screen.
+                        ProgressView(value: progress)
+                            .progressViewStyle(.linear)
+                            .tint(theme.accent)
+                            .frame(height: 2)
+                            .padding(.top, 3)
+                    }
+                }
+
+                Spacer(minLength: 10)
+
+                Text(costLine)
+                    .font(Type.font(10))
+                    .foregroundStyle(active ? theme.accent : Palette.inkMuted)
+                    .lineLimit(1)
+
+                // A filled dot rather than a checkmark: it reads as "this one"
+                // without competing with the icon on the left.
+                Circle()
+                    .strokeBorder(active ? theme.accent : Palette.border, lineWidth: active ? 5 : 1.4)
+                    .frame(width: 15, height: 15)
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 9)
+            .background(RoundedRectangle(cornerRadius: 9)
+                .fill(active ? theme.tint
+                             : (hovering && available ? Palette.borderSoft.opacity(0.55) : .clear)))
+            .overlay(RoundedRectangle(cornerRadius: 9)
+                .strokeBorder(active ? theme.accent.opacity(0.35) : .clear))
+            .contentShape(Rectangle())
+            .opacity(available ? 1 : 0.55)
+        }
+        .buttonStyle(.plain)
+        .disabled(!available)
+        .onHover { hovering = $0 }
     }
 }
 
@@ -646,7 +752,6 @@ struct Panel<Content: View>: View {
 
 private struct SettingsPage: View {
     @ObservedObject private var themeStore = ThemeStore.shared
-    @AppStorage(Settings.polishKey) private var polishEnabled = false
     @AppStorage(Settings.appearanceKey) private var appearanceRaw = Appearance.fallback.rawValue
     @AppStorage(Settings.soundsKey) private var soundsEnabled = true
     private var theme: Theme { themeStore.theme }
@@ -662,10 +767,10 @@ private struct SettingsPage: View {
                                     note: "Applies everywhere: dashboard, the floating island, the logo and the Dock icon.") {
                         ThemePicker()
                     }
-                    SettingsSection("Transcription",
-                                    note: "Enhancement removes fillers, fixes self-corrections and turns spoken lists into real lists. It runs on this Mac and adds a moment before the text lands, so it starts switched off.") {
+                    SettingsSection("Enhancement",
+                                    note: "Removes fillers, follows your self-corrections and turns spoken lists into real lists. Both models run on this Mac and nothing is uploaded either way. The cleanup happens before the text lands, so it costs you the time shown against each option, and it starts switched off.") {
                         VStack(spacing: 8) {
-                            PolishRow(enabled: $polishEnabled)
+                            PolishRow()
                             ToggleRow(icon: "speaker.wave.2",
                                       title: "Start and stop chime",
                                       detail: "A short tone when dictation begins and ends",
@@ -1014,7 +1119,8 @@ private struct RemoveDataRow: View {
             }
         } message: {
             Text("""
-                 This deletes the speech model (\(inventory?.readableModel ?? "unknown")), \
+                 This deletes the speech model (\(inventory?.readableModel ?? "unknown"))\
+                 \(inventory.map { $0.llmBytes > 0 ? ", the local enhancement model (\($0.readableLLM))" : "" } ?? ""), \
                  your dictation history and all preferences, then quits Sono. \
                  Afterwards, drag Sono to the Trash to finish uninstalling.
 

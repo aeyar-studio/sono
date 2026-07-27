@@ -1,0 +1,72 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Sono 1.1</title>
+<!--
+  Shown inside Sparkle's update dialog: a narrow, offline WebView. Everything is
+  inline and the font stack is the system one. No network, no webfonts.
+-->
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 13px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    margin: 0; padding: 14px 16px 18px;
+    color: #1d1d1f; background: transparent;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: #6e6e73; margin: 0 0 14px; font-size: 12px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #6e6e73; margin: 16px 0 6px; font-weight: 600;
+  }
+  ul { margin: 0; padding-left: 17px; }
+  li { margin: 0 0 5px; }
+  b { font-weight: 600; }
+  .note {
+    margin: 16px 0 0; padding: 9px 11px; border-radius: 7px;
+    background: rgba(0,0,0,0.045); color: #424245; font-size: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #f5f5f7; }
+    .sub, h2 { color: #98989d; }
+    .note { background: rgba(255,255,255,0.07); color: #c7c7cc; }
+  }
+</style>
+
+<h1>Sono 1.1</h1>
+<p class="sub">Enhancement without Apple Intelligence.</p>
+
+<h2>A second way to clean up your words</h2>
+<ul>
+  <li>Enhancement can now run on a <b>local model</b> instead of Apple Intelligence.
+    It works on any Apple Silicon Mac, including the ones Apple Intelligence does
+    not support and the regions where it is not offered.</li>
+  <li>It is <b>Qwen3 4B</b>, and like everything else in Sono it runs here. Nothing
+    is uploaded either way.</li>
+  <li>Its context window is <b>32,768 tokens</b> against Apple Intelligence's 4,096,
+    so a long dictation is no longer cut short.</li>
+  <li>The model is a <b>one time 2.3 GB download</b> and only happens if you choose
+    it. Settings tells you before it starts.</li>
+</ul>
+
+<h2>Choosing between them</h2>
+<ul>
+  <li><b>Off</b> stays the default and is instant.</li>
+  <li><b>Apple Intelligence</b> adds about a second.</li>
+  <li><b>The local model</b> adds 2 to 2.5 seconds and is the more thorough of the
+    two on lists and self-corrections.</li>
+</ul>
+<p>Settings now shows all three side by side with what each one costs you, rather
+  than a switch that only said on or off.</p>
+
+<h2>Also in this release</h2>
+<ul>
+  <li><b>Remove all data</b> now deletes the local model too. It removes only Sono's
+    own model, never the shared cache other tools use.</li>
+  <li>Fixed the version Sono reported about itself. It said 0.1 while calling itself
+    1.0, which would have made this update offer itself repeatedly.</li>
+</ul>
+
+<p class="note">
+  Your existing setting is untouched. If Enhancement was on it is still on Apple
+  Intelligence, and if it was off it stays off. Requires macOS 26 or later.
+</p>

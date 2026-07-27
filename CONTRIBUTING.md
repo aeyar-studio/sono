@@ -8,10 +8,19 @@ you an afternoon.
 Requires Xcode 26+ and macOS 26+.
 
 ```bash
-Scripts/fetch-sherpa.sh    # 103 MB of sherpa-onnx libs, deliberately not in git
-xcodegen generate          # Sono.xcodeproj is generated, not committed
-xcodebuild -project Sono.xcodeproj -scheme Sono -configuration Debug build
+Scripts/fetch-sherpa.sh                        # 103 MB of sherpa-onnx libs, deliberately not in git
+xcodebuild -downloadComponent MetalToolchain   # 704 MB, once per machine
+xcodegen generate                              # Sono.xcodeproj is generated, not committed
+xcodebuild -project Sono.xcodeproj -scheme Sono -configuration Debug \
+  -skipMacroValidation build
 ```
+
+Two of those lines exist because of MLX, which powers the local enhancement model.
+It compiles **Metal kernels**, so the build dies with `cannot execute tool 'metal'`
+until the Metal toolchain is installed, and Xcode does not fetch that on its own.
+It also ships **Swift macros**, and Xcode refuses to run a package macro until it
+has been trusted through a UI prompt that cannot appear in a terminal build, hence
+`-skipMacroValidation`. Building inside Xcode shows that prompt once instead.
 
 `Sono.xcodeproj` and `Info.plist` are **both generated from `project.yml`**. Edit
 `project.yml`; anything you change in the other two is overwritten on the next

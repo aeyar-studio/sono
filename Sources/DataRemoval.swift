@@ -12,16 +12,21 @@ enum DataRemoval {
     /// What would be deleted, so the confirmation can be specific rather than vague.
     struct Inventory {
         let modelBytes: Int64
+        /// The local enhancement model, when it has been downloaded.
+        let llmBytes: Int64
         let historyBytes: Int64
         let historyPath: String
         let hasPreferences: Bool
 
-        var totalBytes: Int64 { modelBytes + historyBytes }
+        var totalBytes: Int64 { modelBytes + llmBytes + historyBytes }
         var readableTotal: String {
             ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file)
         }
         var readableModel: String {
             ByteCountFormatter.string(fromByteCount: modelBytes, countStyle: .file)
+        }
+        var readableLLM: String {
+            ByteCountFormatter.string(fromByteCount: llmBytes, countStyle: .file)
         }
     }
 
@@ -29,8 +34,25 @@ enum DataRemoval {
         History.defaultFolder.appendingPathComponent("models")
     }
 
+    /// Where MLX puts the local enhancement model.
+    ///
+    /// Not under Application Support: the Hugging Face hub cache is a SHARED
+    /// directory, and anything else on this Mac that pulls a model uses it too.
+    /// So only Sono's own repo folder is ever touched, never the cache itself.
+    /// Deleting `~/.cache/huggingface` wholesale would take other tools' models
+    /// with it.
+    static var llmFolder: URL? {
+        let repo = "mlx-community/Qwen3-4B-4bit"
+        let slug = "models--" + repo.replacingOccurrences(of: "/", with: "--")
+        let hub = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cache/huggingface/hub")
+        let dir = hub.appendingPathComponent(slug)
+        return FileManager.default.fileExists(atPath: dir.path) ? dir : nil
+    }
+
     static func inventory() -> Inventory {
         Inventory(modelBytes: size(of: modelsFolder),
+                  llmBytes: llmFolder.map(size(of:)) ?? 0,
                   historyBytes: size(of: History.file),
                   historyPath: History.file.path,
                   hasPreferences: UserDefaults.standard.persistentDomain(forName: bundleID) != nil)
@@ -42,7 +64,18 @@ enum DataRemoval {
     static func removeEverythingAndQuit() {
         let fm = FileManager.default
         try? fm.removeItem(at: History.file)          // may be in iCloud Drive
-        try? fm.removeItem(at: History.defaultFolder) // models + anything left
+        try? fm.removeItem(at: History.defaultFolder) // speech model + anything left
+
+        // The local enhancement model, and only it. The lock file sits beside
+        // the repo folder and is orphaned once the weights are gone.
+        if let llm = llmFolder {
+            try? fm.removeItem(at: llm)
+            let locks = llm.deletingLastPathComponent()
+                .appendingPathComponent(".locks")
+                .appendingPathComponent(llm.lastPathComponent)
+            try? fm.removeItem(at: locks)
+        }
+
         UserDefaults.standard.removePersistentDomain(forName: bundleID)
         UserDefaults.standard.synchronize()
 

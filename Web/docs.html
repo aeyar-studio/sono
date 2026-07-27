@@ -4,11 +4,11 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sono · Documentation</title>
-<meta name="description" content="How to install Sono, which permissions it needs and why, what the Apple Intelligence pass does, where your data lives, and how to remove it." />
+<meta name="description" content="How to install Sono, which permissions it needs and why, how the two enhancement models differ, where your data lives, and how to remove it." />
 <link rel="stylesheet" href="css/style.css" />
 <link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
 <meta property="og:title" content="Sono documentation" />
-<meta property="og:description" content="Install, permissions, Apple Intelligence, your data." />
+<meta property="og:description" content="Install, permissions, enhancement models, your data." />
 </head>
 <body>
 
@@ -46,7 +46,7 @@
     <p class="lede">
       Sono is deliberately small. This page is most of what there is to know,
       including the two things the app cannot tell you itself: that the
-      Apple Intelligence pass ships switched off, and that dragging the app to
+      enhancement pass ships switched off, and that dragging the app to
       the Trash leaves the speech model behind.
     </p>
   </header>
@@ -55,7 +55,7 @@
     <a href="#install">Install</a>
     <a href="#permissions">Permissions</a>
     <a href="#using">Using it</a>
-    <a href="#intelligence">Apple Intelligence</a>
+    <a href="#intelligence">Enhancement</a>
     <a href="#settings">Settings</a>
     <a href="#data">Your data</a>
     <a href="#trouble">Troubleshooting</a>
@@ -164,16 +164,16 @@
 
   <!-- ─────────────────────────────── apple intelligence -->
   <section class="docs-sec" id="intelligence">
-    <h2>Apple Intelligence</h2>
+    <h2>Enhancement</h2>
     <p>
       This is the part that makes Sono more than a transcriber, and it is
       <b>switched off when you install</b>. That is deliberate: the first
       dictation you ever run should be as fast as your Mac can manage, and the
-      polish pass adds a second or two.
+      cleanup adds a beat.
     </p>
     <p class="docs-turnon">
-      Turn it on in <b>Settings → Enhancement</b>. Nothing leaves your Mac either
-      way; the model runs on device.
+      Turn it on in <b>Settings → Enhancement</b>. Both models run on this Mac.
+      Nothing is uploaded either way.
     </p>
 
     <h3>What it fixes</h3>
@@ -185,17 +185,40 @@
       <li><b>Spoken lists become real lists</b>, numbered and on their own lines.</li>
     </ul>
 
+    <h3>Two models to choose from</h3>
+    <table class="docs-table">
+      <thead><tr><th>Option</th><th>Costs</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td>Off</td><td>Instant</td>
+            <td>The default. Raw transcription, exactly as spoken.</td></tr>
+        <tr><td>Apple Intelligence</td><td>About a second</td>
+            <td>The model already on your Mac. Nothing to download, but it needs a
+                Mac that supports Apple Intelligence, and its context window is
+                4,096 tokens.</td></tr>
+        <tr><td>Local model</td><td>2 to 2.5 seconds</td>
+            <td>Qwen3 4B, a <b>one time 2.3 GB download</b>. Runs on any Apple
+                Silicon Mac, including where Apple Intelligence is unavailable.
+                32,768 token context, so long dictations are not cut short.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      The local model is the more thorough of the two on lists and self
+      corrections, and it is the slower of the two. Settings shows all three
+      options with what each one costs you.
+    </p>
+
     <h3>When it declines</h3>
     <p>
-      Sono never trusts the language model blindly. The polished text is thrown
-      away and your raw transcript is used instead if the result comes back
-      empty, more than about twice as long as the original (the model answered
-      the transcript instead of editing it), less than half as long (it ate a
-      clause), or opens like a refusal.
+      Sono never trusts the language model blindly, whichever one you pick. The
+      polished text is thrown away and your raw transcript is used instead if the
+      result comes back empty, more than about twice as long as the original (the
+      model answered the transcript instead of editing it), less than half as long
+      (it ate a clause), or opens like a refusal.
     </p>
     <p>
       A bad model response therefore costs you polish, never words. On a Mac
-      without Apple Intelligence available, the toggle simply has no effect.
+      without Apple Intelligence available, that option is greyed out and the
+      local model is the one to use.
     </p>
   </section>
 
@@ -206,7 +229,7 @@
       <thead><tr><th>Setting</th><th>Default</th><th>What it does</th></tr></thead>
       <tbody>
         <tr><td>Enhancement</td><td><b>Off</b></td>
-            <td>The Apple Intelligence pass described above.</td></tr>
+            <td>Off, Apple Intelligence, or the local model. See above.</td></tr>
         <tr><td>Appearance</td><td>Light</td>
             <td>Light, dark, or follow the system.</td></tr>
         <tr><td>Accent</td><td>Lavender</td>
