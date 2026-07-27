@@ -29,7 +29,9 @@ actor LocalPolisher {
 
     enum State: Equatable, Sendable {
         case idle
-        case downloading(fraction: Double)
+        /// Real bytes against a known total, so the UI can show a true percent.
+        case downloading(received: Int64, total: Int64)
+        case verifying(String)
         case loading
         case ready
         case failed(String)
@@ -38,7 +40,9 @@ actor LocalPolisher {
     private(set) var state: State = .idle
     private var container: ModelContainer?
 
-    private static let model = LLMRegistry.qwen3_4b_4bit
+    /// Loaded from our own copy on disk, not from the Hugging Face hub. The hub
+    /// path works, but its progress reporting does not cover the weights file,
+    /// so there was no honest percentage to show while 2 GB arrived.
 
     /// Qwen3 reasons out loud by default. That is seconds of latency plus a
     /// monologue to discard, so it is switched off. `/no_think` is the soft
@@ -49,16 +53,12 @@ actor LocalPolisher {
     /// Enough to edit a spoken paragraph, and a bound on runaway generation.
     private static let maxTokens = 600
 
-    /// Set once the weights have loaded, so Settings can say "downloaded"
-    /// without pulling the model into memory to find out.
-    private static let downloadedKey = "localModelDownloaded"
+    /// Checked on disk rather than via a flag, so a partly removed model cannot
+    /// claim to be ready.
+    nonisolated static var isDownloaded: Bool { LocalModelDownloader.isPresent }
 
-    nonisolated static var isDownloaded: Bool {
-        UserDefaults.standard.bool(forKey: downloadedKey)
-    }
-
-    /// Roughly what the first run costs, for the sentence shown before it starts.
-    static let downloadBytes: Int64 = 2_300_000_000
+    /// What the first run costs, for the sentence shown before it starts.
+    static let downloadBytes: Int64 = LocalModelDownloader.archiveBytes
 
     func currentState() -> State { state }
 
@@ -95,24 +95,30 @@ actor LocalPolisher {
     private func ensureLoaded() async throws -> ModelContainer {
         if let container { return container }
 
-        state = .downloading(fraction: 0)
-        let loaded = try await #huggingFaceLoadModelContainer(
-            configuration: Self.model,
-            progressHandler: { progress in
-                Task { await LocalPolisher.shared.note(progress.fractionCompleted) }
+        state = .downloading(received: 0, total: LocalModelDownloader.archiveBytes)
+        let directory = try await LocalModelDownloader.ensureModel(
+            onProgress: { received, total in
+                Task { await LocalPolisher.shared.note(received, total) }
+            },
+            onStage: { stage in
+                Task { await LocalPolisher.shared.stage(stage) }
             })
 
         state = .loading
+        // A plain directory: no hub, no network, nothing left to resolve.
+        let loaded = try await #huggingFaceLoadModelContainer(
+            configuration: ModelConfiguration(directory: directory))
         container = loaded
-        UserDefaults.standard.set(true, forKey: Self.downloadedKey)
         state = .ready
         return loaded
     }
 
-    private func note(_ fraction: Double) {
+    private func note(_ received: Int64, _ total: Int64) {
         guard case .downloading = state else { return }
-        state = .downloading(fraction: fraction)
+        state = .downloading(received: received, total: total)
     }
+
+    private func stage(_ text: String) { state = .verifying(text) }
 
     /// Pull the weights when the engine is chosen, so the first dictation is not
     /// the one that waits on a 2.3 GB download.

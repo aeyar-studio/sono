@@ -582,25 +582,30 @@ private struct PolishRow: View {
 
     /// Replaces the local row's cost line while something is happening to it.
     /// nil means show the ordinary "Adds 2 to 2.5 seconds".
+    /// A real percentage and a real byte count, because both come from our own
+    /// download against a total known before the first byte moves.
     private var localStatus: String? {
         switch download {
-        // No percentage. The Progress the downloader hands back does not track
-        // the big weights file: measured at roughly 800 MB of 2.3 GB actually
-        // transferred, fractionCompleted was still under 0.01, so the label sat
-        // on "0%" for the whole download and read as a hang. An honest
-        // indeterminate bar beats a number that is wrong.
-        case .downloading: "Downloading, a few minutes"
-        case .loading: "Loading the model"
-        case .failed(let why): "Download failed. \(why)"
-        case .ready: "Loaded and ready"
-        case .idle: LocalPolisher.isDownloaded ? nil : "Downloads 2.3 GB the first time"
+        case .downloading(let got, let total):
+            let pct = total > 0 ? Int(Double(got) / Double(total) * 100) : 0
+            let g = ByteCountFormatter.string(fromByteCount: got, countStyle: .file)
+            let t = ByteCountFormatter.string(fromByteCount: total, countStyle: .file)
+            return "\(pct)%  ·  \(g) of \(t)"
+        case .verifying(let what): return what
+        case .loading: return "Loading the model"
+        case .failed(let why): return "Failed. \(why)"
+        case .ready: return "Loaded and ready"
+        case .idle:
+            return LocalPolisher.isDownloaded ? nil : "Downloads 1.9 GB the first time"
         }
     }
 
-    /// True only while bytes are moving, so the row can show an indeterminate bar.
-    private var isDownloading: Bool {
-        if case .downloading = download { return true }
-        return false
+    /// Fraction for the bar, or nil when there is nothing to draw.
+    private var downloadFraction: Double? {
+        if case .downloading(let got, let total) = download, total > 0 {
+            return Double(got) / Double(total)
+        }
+        return nil
     }
 
     var body: some View {
@@ -611,7 +616,7 @@ private struct PolishRow: View {
                                  active: engine == option,
                                  available: enabled(option),
                                  status: option == .local ? localStatus : nil,
-                                 busy: option == .local && isDownloading) {
+                                 fraction: option == .local ? downloadFraction : nil) {
                         withAnimation(.easeOut(duration: 0.16)) { raw = option.rawValue }
                     }
                 }
@@ -653,8 +658,8 @@ private struct EngineOption: View {
     let available: Bool
     /// Overrides the cost line while the local model is downloading or loading.
     let status: String?
-    /// Shows an indeterminate bar. Deliberately not a fraction, see localStatus.
-    let busy: Bool
+    /// Real 0...1 progress while downloading, nil otherwise.
+    let fraction: Double?
     let select: () -> Void
 
     @State private var hovering = false
@@ -681,15 +686,14 @@ private struct EngineOption: View {
                     Text(option.detail)
                         .font(Type.font(10.5))
                         .foregroundStyle(Palette.inkSecondary)
-                    if busy {
-                        // Indeterminate: the downloader's fraction is not
-                        // trustworthy for the large file, and a bar frozen near
-                        // zero for twenty minutes looks like a crash.
-                        ProgressView()
+                    if let fraction {
+                        // 4pt, not 2: a 2pt bar is too thin to read as movement,
+                        // which is how the previous attempt still looked stuck.
+                        ProgressView(value: fraction)
                             .progressViewStyle(.linear)
                             .tint(theme.accent)
-                            .frame(height: 2)
-                            .padding(.top, 3)
+                            .frame(height: 4)
+                            .padding(.top, 4)
                     }
                 }
 
