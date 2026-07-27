@@ -50,7 +50,13 @@ echo "  notary profile: $NOTARY_PROFILE"
 
 VERSION="$(grep -E "^\s+MARKETING_VERSION:" project.yml | sed 's/.*: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/' || true)"
 [ -n "$VERSION" ] || fail "Could not read MARKETING_VERSION from project.yml"
-echo "  version: $VERSION"
+# Sparkle compares sparkle:version against the INSTALLED app's CFBundleVersion,
+# not against the marketing string. Writing "1.1.1" there while the installed
+# build reported CFBundleVersion 2 made Sparkle read 1 < 2 and answer "up to
+# date" for an update that was genuinely newer. This is the build number.
+BUILD="$(grep -E "^\s+CURRENT_PROJECT_VERSION:" project.yml | sed 's/.*: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/' || true)"
+[ -n "$BUILD" ] || fail "Could not read CURRENT_PROJECT_VERSION from project.yml"
+echo "  version: $VERSION (build $BUILD)"
 
 # ─────────────────────────────────────────────────── build
 step "Building Release"
@@ -167,7 +173,7 @@ cat > "$APPCAST" <<XML
       <sparkle:releaseNotesLink>$NOTES_URL</sparkle:releaseNotesLink>
       <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
       <enclosure url="https://heysono.app/releases/$APP_NAME-$VERSION.dmg"
-                 sparkle:version="$VERSION"
+                 sparkle:version="$BUILD"
                  sparkle:shortVersionString="$VERSION"
                  $SIGNATURE_LINE
                  type="application/octet-stream" />
