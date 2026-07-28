@@ -797,6 +797,7 @@ struct Panel<Content: View>: View {
 
 private struct SettingsPage: View {
     @ObservedObject private var themeStore = ThemeStore.shared
+    @ObservedObject private var loginItems = LoginItemStore.shared
     @AppStorage(Settings.appearanceKey) private var appearanceRaw = Appearance.fallback.rawValue
     @AppStorage(Settings.soundsKey) private var soundsEnabled = true
     private var theme: Theme { themeStore.theme }
@@ -821,6 +822,13 @@ private struct SettingsPage: View {
                                       detail: "A short tone when dictation begins and ends",
                                       isOn: $soundsEnabled)
                         }
+                    }
+                    SettingsSection("Startup", note: "Lets Sono open automatically when you log in.") {
+                        ToggleRow(icon: "power",
+                                  title: "Open at login",
+                                  detail: "Launch Sono automatically after sign-in",
+                                  isOn: Binding(get: { loginItems.enabled },
+                                                set: { loginItems.setEnabled($0) }))
                     }
                     SettingsSection("History",
                                     note: "Metrics are calculated from this file, so moving it carries them too.") {

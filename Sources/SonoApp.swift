@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         Type.registerBundledFonts()
         ThemeStore.shared.applyDockIcon()   // Dock tile matches the chosen theme
+        LoginItemStore.shared.syncFromSystem()
         dictation = Dictation()
     }
 }
