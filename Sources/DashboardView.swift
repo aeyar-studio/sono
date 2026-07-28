@@ -826,7 +826,11 @@ private struct SettingsPage: View {
                     SettingsSection("Startup", note: "Lets Sono open automatically when you log in.") {
                         ToggleRow(icon: "power",
                                   title: "Open at login",
-                                  detail: "Launch Sono automatically after sign-in",
+                                  // The reason replaces the description when a
+                                  // registration is refused, so the switch never
+                                  // just flicks back with no explanation.
+                                  detail: loginItems.problem
+                                      ?? "Launch Sono automatically after sign-in",
                                   isOn: Binding(get: { loginItems.enabled },
                                                 set: { loginItems.setEnabled($0) }))
                     }

@@ -8,7 +8,6 @@ enum Settings {
     static let themeKey = "accentTheme"
     static let appearanceKey = "appearance"
     static let soundsKey = "soundsEnabled"
-    static let launchAtLoginKey = "launchAtLogin"
     /// Folder holding history.jsonl. Empty = Application Support (local only).
     /// Point it at iCloud Drive to sync across Macs.
     static let historyFolderKey = "historyFolder"
