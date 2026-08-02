@@ -23,7 +23,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Type.registerBundledFonts()
         ThemeStore.shared.applyDockIcon()   // Dock tile matches the chosen theme
         LoginItemStore.shared.syncFromSystem()
+        AppHealthStore.shared.refreshPermissions()
         dictation = Dictation()
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        AppHealthStore.shared.refreshPermissions()
     }
 }
 
@@ -55,8 +60,11 @@ final class Dictation {
     }
 
     private func setup() async {
+        AppHealthStore.shared.setModelLoading("Checking permissions…")
         island.model.phase = .loading("Mic…")
+        AppHealthStore.shared.refreshPermissions()
         guard await Recorder.requestMicAccess() else {
+            AppHealthStore.shared.setModelFailed("Microphone access needed")
             island.model.phase = .flash("Mic denied"); return
         }
         // No Speech Recognition request: transcription is Parakeet via sherpa-onnx,
@@ -69,12 +77,25 @@ final class Dictation {
         // and opens System Settings, which is disruptive wherever it happens, so
         // it belongs in setup rather than interrupting someone mid-sentence.
         Injector.ensureAccessibility()
+        AppHealthStore.shared.refreshPermissions()
 
         // The model is downloaded on first launch — a fresh install must work
         // with no manual setup. Subsequent launches skip straight past this.
         do {
+            AppHealthStore.shared.setModelLoading("Downloading model…")
             let paths = try await ModelDownloader.ensureModel { [weak self] stage in
-                Task { @MainActor in self?.show(stage) }
+                Task { @MainActor in
+                    AppHealthStore.shared.setModelLoading({
+                        switch stage {
+                        case .checking: return "Checking model…"
+                        case .downloading(let fraction): return "Downloading model \(Int(fraction * 100))%"
+                        case .verifying: return "Verifying model…"
+                        case .extracting: return "Unpacking model…"
+                        case .ready: return "Loading model…"
+                        }
+                    }())
+                    self?.show(stage)
+                }
             }
             // Building the ONNX sessions blocks for a second or two.
             island.model.phase = .loading("Loading model…")
@@ -83,13 +104,16 @@ final class Dictation {
             }).value {
                 transcriber = loaded
                 modelReady = true
+                AppHealthStore.shared.setModelReady()
             } else {
+                AppHealthStore.shared.setModelFailed("Model failed to load")
                 island.model.phase = .flash("Model failed to load")
                 return
             }
         } catch {
             // Tapping the island retries; the dashboard shows the reason too.
             modelError = error.localizedDescription
+            AppHealthStore.shared.setModelFailed(error.localizedDescription)
             island.model.phase = .flash("Model download failed")
             return
         }
@@ -100,12 +124,16 @@ final class Dictation {
     private func show(_ stage: ModelDownloader.Stage) {
         switch stage {
         case .checking:
+            AppHealthStore.shared.setModelLoading("Checking model…")
             island.model.phase = .loading("Checking model…")
         case .downloading(let fraction):
+            AppHealthStore.shared.setModelLoading("Downloading model \(Int(fraction * 100))%")
             island.model.phase = .loading("Downloading model \(Int(fraction * 100))%")
         case .verifying:
+            AppHealthStore.shared.setModelLoading("Verifying model…")
             island.model.phase = .loading("Verifying model…")
         case .extracting:
+            AppHealthStore.shared.setModelLoading("Unpacking model…")
             island.model.phase = .loading("Unpacking model…")
         case .ready:
             break
@@ -143,6 +171,7 @@ final class Dictation {
             try recorder.start()
             island.model.phase = .recording
         } catch {
+            AppHealthStore.shared.setModelFailed(error.localizedDescription)
             flash(error.localizedDescription)
         }
     }
@@ -157,6 +186,7 @@ final class Dictation {
         // silence from a long sentence: the model was billed for leading quiet,
         // and room tone alone could still come back as a word.
         guard let speech = VoiceActivity.trim(samples) else {
+            AppHealthStore.shared.setModelReady()
             island.model.phase = .ready; return
         }
 
@@ -180,8 +210,10 @@ final class Dictation {
                                    duration: Double(speech.count) / Recorder.sampleRate,
                                    pasted: pasted,
                                    app: target?.name, appID: target?.bundleID)
+                AppHealthStore.shared.lastError = nil
                 flash(pasted ? "Pasted" : "Copied to clipboard")
             } catch {
+                AppHealthStore.shared.setModelFailed("No speech")
                 flash("No speech")
             }
         }
@@ -189,6 +221,9 @@ final class Dictation {
 
     private func flash(_ message: String) {
         island.model.phase = .flash(message)
+        if message != "Pasted" && message != "Copied to clipboard" {
+            AppHealthStore.shared.lastError = message
+        }
         Task {
             try? await Task.sleep(for: .seconds(1.2))
             if case .flash = island.model.phase { island.model.phase = .ready }
