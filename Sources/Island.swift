@@ -109,6 +109,7 @@ final class Island {
 private struct IslandView: View {
     @ObservedObject var model: IslandModel
     @ObservedObject private var themeStore = ThemeStore.shared
+    @ObservedObject private var health = AppHealthStore.shared
     @State private var hovering = false
 
     // Idle collapses to a small lozenge and grows on hover.
@@ -162,7 +163,8 @@ private struct IslandView: View {
 
     private var contentWidth: CGFloat {
         switch model.phase {
-        case .ready: hovering ? 128 : 44
+        case .ready:
+            if hovering || health.lastError != nil { 128 } else { 44 }
         case .recording: 142
         case .thinking: 84
         case .loading, .flash: 172
@@ -172,7 +174,9 @@ private struct IslandView: View {
     @ViewBuilder private var content: some View {
         switch model.phase {
         case .ready:
-            if hovering {
+            if let message = health.message, hovering || health.lastError != nil {
+                label(message)
+            } else if hovering {
                 HStack(spacing: 6) {
                     Image(systemName: "mic.fill").font(.system(size: 9))
                     Text("tap / hold ⌥").font(.system(size: 10, weight: .semibold))

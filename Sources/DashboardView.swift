@@ -798,6 +798,7 @@ struct Panel<Content: View>: View {
 private struct SettingsPage: View {
     @ObservedObject private var themeStore = ThemeStore.shared
     @ObservedObject private var loginItems = LoginItemStore.shared
+    @ObservedObject private var health = AppHealthStore.shared
     @AppStorage(Settings.appearanceKey) private var appearanceRaw = Appearance.fallback.rawValue
     @AppStorage(Settings.soundsKey) private var soundsEnabled = true
     private var theme: Theme { themeStore.theme }
@@ -806,6 +807,9 @@ private struct SettingsPage: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Group {
+                    SettingsSection("Status", note: "A quick read on whether Sono is ready to dictate.") {
+                        StatusCard()
+                    }
                     SettingsSection("Appearance", note: nil) {
                         AppearancePicker(selection: $appearanceRaw)
                     }
@@ -826,9 +830,6 @@ private struct SettingsPage: View {
                     SettingsSection("Startup", note: "Lets Sono open automatically when you log in.") {
                         ToggleRow(icon: "power",
                                   title: "Open at login",
-                                  // The reason replaces the description when a
-                                  // registration is refused, so the switch never
-                                  // just flicks back with no explanation.
                                   detail: loginItems.problem
                                       ?? "Launch Sono automatically after sign-in",
                                   isOn: Binding(get: { loginItems.enabled },
@@ -883,6 +884,68 @@ private struct SettingsPage: View {
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(Palette.canvas)
+    }
+}
+
+private struct StatusCard: View {
+    @ObservedObject private var health = AppHealthStore.shared
+    @ObservedObject private var loginItems = LoginItemStore.shared
+    @ObservedObject private var themeStore = ThemeStore.shared
+
+    private var theme: Theme { themeStore.theme }
+
+    var body: some View {
+        Panel(padding: 15) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    Image(systemName: health.iconName)
+                        .font(Type.font(12, .medium))
+                        .foregroundStyle(health.tint ?? theme.accent)
+                        .frame(width: 28, height: 28)
+                        .background(RoundedRectangle(cornerRadius: 8)
+                            .fill((health.tint ?? theme.accent).opacity(0.12)))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(health.title)
+                            .font(Type.font(12, .medium))
+                            .foregroundStyle(Palette.ink)
+                        Text(health.subtitle)
+                            .font(Type.font(10.5))
+                            .foregroundStyle(Palette.inkSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                HStack(spacing: 8) {
+                    if !loginItems.enabled {
+                        SmallButton(title: "Open at login", filled: true) {
+                            loginItems.setEnabled(true)
+                        }
+                    }
+                    if health.needsMic {
+                        SmallButton(title: "Mic access", filled: false) {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
+                        }
+                    }
+                    if health.needsAccessibility {
+                        SmallButton(title: "Accessibility", filled: false) {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                        }
+                    }
+                    if health.needsMic || health.needsAccessibility {
+                        SmallButton(title: "Refresh status", filled: false) {
+                            health.refreshPermissions()
+                        }
+                    } else if case .failed = health.model {
+                        SmallButton(title: "Refresh status", filled: false) {
+                            health.refreshPermissions()
+                            health.syncLoginAtStartup()
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+        }
     }
 }
 

@@ -22,10 +22,12 @@ final class LoginItemStore: ObservableObject {
 
     private init() {
         enabled = SMAppService.mainApp.status == .enabled
+        AppHealthStore.shared.loginAtStartup = enabled
     }
 
     func syncFromSystem() {
         enabled = SMAppService.mainApp.status == .enabled
+        AppHealthStore.shared.loginAtStartup = enabled
     }
 
     func setEnabled(_ newValue: Bool) {
@@ -41,6 +43,7 @@ final class LoginItemStore: ObservableObject {
         }
         // Always resync: the system is the truth, whether or not the call threw.
         syncFromSystem()
+        AppHealthStore.shared.syncLoginAtStartup()
     }
 
     /// `SMAppService` errors surface as Cocoa codes with unhelpful text, so the
